@@ -8,7 +8,7 @@
     <?php include 'sidebar.php'; ?>
     <main class="flex-1 pl-56 m-4">
         <!-- Message Container -->
-        <div id="message-container" class="fixed top-20 right-4 z-50"></div>
+        <div id="message-container" class="fixed top-4 right-4 z-50 w-80 space-y-2"></div>
 
         <h2 class="text-2xl font-bold text-[var(--primary-color)] mb-4 text-center">Orders</h2>
 
@@ -92,9 +92,10 @@
                                     }
 
                                     // Update or insert items
+                                    // Update or insert items
                                     $total_amount = 0;
                                     for ($i = 0; $i < count($product_ids); $i++) {
-                                        $item_id    = $item_ids[$i] ?? null; // Handle new items that don't have an ID yet
+                                        $item_id    = $item_ids[$i] ?? null;
                                         $product_id = $product_ids[$i] ?? null;
                                         $quantity   = $quantities[$i] ?? 0;
                                         $price      = $prices[$i] ?? 0;
@@ -102,23 +103,24 @@
                                         $row_total  = ($price * $quantity) - $discount;
                                         $total_amount += $row_total;
 
-                                        // Validate required fields
+                                        // Skip if required fields are empty
                                         if (empty($product_id) || empty($quantity) || empty($price)) {
-                                            continue; // Skip invalid rows
+                                            continue;
                                         }
 
-                                        if (! empty($item_id)) {
+                                        // Check if this is an existing item (has numeric ID) or new item
+                                        if (! empty($item_id) && is_numeric($item_id)) {
                                             // Update existing item
                                             $updateItem = "UPDATE invoice_items SET
-                product_id = ?, quantity = ?, price = ?, discount = ?
-                WHERE id = ?";
+            product_id = ?, quantity = ?, price = ?, discount = ?
+            WHERE id = ?";
                                             $stmt = $conn->prepare($updateItem);
                                             $stmt->bind_param("iiddi", $product_id, $quantity, $price, $discount, $item_id);
                                         } else {
                                             // Insert new item
                                             $insertItem = "INSERT INTO invoice_items
-                (invoice_id, product_id, quantity, price, discount)
-                VALUES (?, ?, ?, ?, ?)";
+            (invoice_id, product_id, quantity, price, discount)
+            VALUES (?, ?, ?, ?, ?)";
                                             $stmt = $conn->prepare($insertItem);
                                             $stmt->bind_param("iiidd", $id, $product_id, $quantity, $price, $discount);
                                         }
@@ -127,7 +129,6 @@
                                             throw new Exception("Error updating items: " . $stmt->error);
                                         }
                                     }
-
                                     // Subtract advanced payment from the total
                                     $advanced_payment = $_POST['advanced_payment'] ?? 0;
                                     $total_amount -= $advanced_payment;
@@ -300,13 +301,13 @@
 
                     <select name="status_filter" class="p-2 border border-gray-300 rounded-md">
                         <option value="">All Statuses</option>
-                        <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
+                        <option value="Pending"                                                <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
                         </option>
-                        <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
+                        <option value="Completed"                                                  <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
+                        <option value="Canceled"                                                 <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
                         </option>
-                        <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
+                        <option value="Returned"                                                 <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
                     </select>
 
@@ -348,33 +349,33 @@
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
                                 $items_sql = "SELECT ii.*, p.product_name, p.price
-															                                         FROM invoice_items ii
-															                                         JOIN products p ON ii.product_id = p.id
-															                                         WHERE ii.invoice_id = ?";
+																					                                         FROM invoice_items ii
+																					                                         JOIN products p ON ii.product_id = p.id
+																					                                         WHERE ii.invoice_id = ?";
                                 $items_stmt = $conn->prepare($items_sql);
                                 $items_stmt->bind_param("i", $row['id']);
                                 $items_stmt->execute();
                                 $items_result  = $items_stmt->get_result();
                                 $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
                             ?>
-                        <tr class="text-left bg-gray-50 hover:bg-gray-100" id="row_<?php echo $row['id']; ?>">
-                            <form method="POST" id="form_<?php echo $row['id']; ?>"
-                                onsubmit="return validateForm(<?php echo $row['id']; ?>)">
-                                <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+	                        <tr class="text-left bg-gray-50 hover:bg-gray-100" id="row_<?php echo $row['id']; ?>">
+	                            <form method="POST" id="form_<?php echo $row['id']; ?>"
+	                                onsubmit="return validateForm(<?php echo $row['id']; ?>)">
+	                                <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
 
-                                <td class="p-2 border"><input type="checkbox" name="selected[]"
-                                        value="<?php echo $row['id']; ?>"></td>
-                                <td class="p-2 border text-center flex space-x-2">
-                                    <button type="button"
-                                        class="edit-btn bg-yellow-500 text-white px-3 py-1 text-xs rounded"
-                                        onclick="enableEdit(<?php echo $row['id']; ?>)">Edit</button>
-                                    <button type="submit" name="update"
-                                        class="save-btn bg-green-500 text-white px-3 py-1 text-xs rounded hidden">Save</button>
-                                    <?php if ($_SESSION['role'] == 'Admin'): ?>
-                                    <button type="submit" name="delete_invoice"
-                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
-                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
-                                    <?php endif; ?>
+	                                <td class="p-2 border"><input type="checkbox" name="selected[]"
+	                                        value="<?php echo $row['id']; ?>"></td>
+	                                <td class="p-2 border text-center flex space-x-2">
+	                                    <button type="button"
+	                                        class="edit-btn bg-yellow-500 text-white px-3 py-1 text-xs rounded"
+	                                        onclick="enableEdit(<?php echo $row['id']; ?>)">Edit</button>
+	                                    <button type="submit" name="update"
+	                                        class="save-btn bg-green-500 text-white px-3 py-1 text-xs rounded hidden">Save</button>
+	                                    <?php if ($_SESSION['role'] == 'Admin'): ?>
+	                                    <button type="submit" name="delete_invoice"
+	                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
+	                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
+	                                    <?php endif; ?>
                                     <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
                                         onclick="printInvoice(<?php echo $row['id']; ?>)">Print</button>
                                 </td>
@@ -454,76 +455,59 @@
 
                                 <!-- In your table row where you display the product items, modify the edit section like this: -->
                                 <td class="p-2 border">
-                                    <!-- View mode -->
                                     <div id="items-display-<?php echo $row['id']; ?>">
                                         <?php foreach ($invoice_items as $item): ?>
-                                        <div class="text-xs mb-1">
-                                            <?php echo htmlspecialchars($item['product_name']); ?>
-                                            (Qty:<?php echo $item['quantity']; ?>,
-                                            ₹<?php echo number_format($item['price'], 2); ?>)
-                                            <?php if ($item['discount'] > 0): ?>
-                                            - Discount: ₹<?php echo number_format($item['discount'], 2); ?>
-                                            <?php endif; ?>
-                                            <input type="hidden" name="item_id[]" value="<?php echo $item['id']; ?>">
+                                        <div class="text-xs mb-1 flex justify-between items-center">
+                                            <span>
+                                                <?php echo htmlspecialchars($item['product_name']); ?>
+                                                (Qty:<?php echo $item['quantity']; ?>,
+                                                ₹<?php echo number_format($item['price'], 2); ?>)
+                                                <?php if ($item['discount'] > 0): ?>
+                                                - Discount: ₹<?php echo number_format($item['discount'], 2); ?>
+<?php endif; ?>
+                                            </span>
+                                            <button type="button" class="text-red-500 hover:text-red-700 text-sm"
+                                                onclick="removeProduct(<?php echo $row['id']; ?>,<?php echo $item['id']; ?>)">
+                                                ×
+                                            </button>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
 
-                                    <!-- Edit mode -->
-                                    <div id="items-edit-<?php echo $row['id']; ?>" class="hidden space-y-2 text-xs">
-                                        <!-- Headings -->
-                                        <div class="grid grid-cols-5 font-semibold text-gray-600">
-                                            <div>Product</div>
-                                            <div>Qty</div>
-                                            <div>Price</div>
-                                            <div>Discount</div>
-                                            <div>Action</div>
-                                        </div>
-
-                                        <!-- Editable rows -->
-                                        <?php foreach ($invoice_items as $item): ?>
-                                        <div class="item-row grid grid-cols-5 gap-2">
-                                            <input type="hidden" name="item_id[]" value="<?php echo $item['id']; ?>">
-                                            <select name="product_id[]"
-                                                class="product-select editable p-1 border rounded" required
-                                                onchange="updatePrice(this,                                                                                                                                                                                                                                                                                                                                                                                                                                                                   <?php echo $row['id']; ?>)">
+                                    <!-- Add Product Interface -->
+                                    <div class="mt-2 p-2 border rounded bg-gray-50">
+                                        <div class="grid grid-cols-5 gap-2 items-center mb-2">
+                                            <select id="new-product-<?php echo $row['id']; ?>"
+                                                class="p-2 text-xs border rounded focus:ring-2 focus:ring-blue-500">
                                                 <option value="">Select Product</option>
                                                 <?php foreach ($products as $product): ?>
                                                 <option value="<?php echo $product['id']; ?>"
-                                                    data-price="<?php echo $product['price']; ?>"
-                                                    <?php echo $product['id'] == $item['product_id'] ? 'selected' : ''; ?>>
+                                                    data-price="<?php echo $product['price']; ?>">
                                                     <?php echo htmlspecialchars($product['product_name']); ?>
                                                 </option>
                                                 <?php endforeach; ?>
                                             </select>
 
-                                            <input type="number" name="quantity[]"
-                                                value="<?php echo $item['quantity']; ?>"
-                                                class="quantity-input editable p-1 border rounded"
-                                                onchange="calculateRowTotal(this,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <?php echo $row['id']; ?>)"
-                                                min="1" required>
+                                            <input type="number" id="new-quantity-<?php echo $row['id']; ?>" value="1"
+                                                min="1"
+                                                class="p-2 text-xs border rounded focus:ring-2 focus:ring-blue-500">
 
-                                            <input type="number" name="price[]" value="<?php echo $item['price']; ?>"
-                                                class="price-input editable p-1 border rounded bg-gray-100"
-                                                onchange="calculateRowTotal(this,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <?php echo $row['id']; ?>)"
-                                                min="0" step="0.01" required readonly>
+                                            <input type="number" id="new-price-<?php echo $row['id']; ?>" value="0"
+                                                min="0" step="0.01"
+                                                class="p-2 text-xs border rounded bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                                                readonly>
 
-                                            <input type="number" name="discount[]"
-                                                value="<?php echo $item['discount']; ?>"
-                                                class="discount-input editable p-1 border rounded"
-                                                onchange="calculateRowTotal(this,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       <?php echo $row['id']; ?>)"
-                                                min="0" step="0.01">
+                                            <input type="number" id="new-discount-<?php echo $row['id']; ?>" value="0"
+                                                min="0" step="0.01"
+                                                class="p-2 text-xs border rounded focus:ring-2 focus:ring-blue-500">
 
-                                            <button type="button" class="remove-item-btn text-red-500 text-lg"
-                                                onclick="removeItemRow(this,                                                                                                                                                                                                                                                                                                                                                                                                                                                                         <?php echo $row['id']; ?>)">×</button>
+                                            <button type="button" class="bg-blue-500 text-white p-2 rounded text-xs"
+                                                onclick="addProduct(<?php echo $row['id']; ?>)">
+                                                Add
+                                            </button>
                                         </div>
-                                        <?php endforeach; ?>
-
-                                        <button type="button" class="add-item-btn text-xs text-blue-500 mt-1"
-                                            onclick="addItemRow(<?php echo $row['id']; ?>)">+ Add Product</button>
                                     </div>
                                 </td>
-
                                 <td class="p-2 border"><input type="text" name="employee_name" readonly
                                         value="<?php echo htmlspecialchars($row['employee_name']); ?>"
                                         class="editable w-full p-1 border border-gray-300 text-xs rounded" disabled>
@@ -586,7 +570,7 @@
 
             for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -610,8 +594,8 @@
 
         <!-- Page Info -->
         <div class="text-center text-sm text-gray-600 mt-2">
-            Page <?php echo $page; ?> of<?php echo $pages; ?> |
-            Showing <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
+            Page                 <?php echo $page; ?> of<?php echo $pages; ?> |
+            Showing                    <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
             records
         </div>
 
@@ -687,12 +671,198 @@
         // Initial calculation
         calculateInvoiceTotal(invoiceId);
     }
-    // Add new item row
+
+    // Add new product via AJAX
+function addProduct(invoiceId) {
+    const productSelect = document.getElementById(`new-product-${invoiceId}`);
+    const quantityInput = document.getElementById(`new-quantity-${invoiceId}`);
+    const priceInput = document.getElementById(`new-price-${invoiceId}`);
+    const discountInput = document.getElementById(`new-discount-${invoiceId}`);
+
+    // Validate inputs
+    if (!productSelect.value) {
+        showMessage('Please select a product', 'error');
+        productSelect.focus();
+        return;
+    }
+    if (!quantityInput.value || quantityInput.value < 1) {
+        showMessage('Please enter a valid quantity', 'error');
+        quantityInput.focus();
+        return;
+    }
+
+    // Prepare data
+    const productData = {
+        invoice_id: invoiceId,
+        product_id: productSelect.value,
+        quantity: quantityInput.value,
+        price: priceInput.value,
+        discount: discountInput.value || 0
+    };
+
+    // AJAX call to add product
+    fetch('add_invoice_product.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add new item to display
+            const displayDiv = document.getElementById(`items-display-${invoiceId}`);
+            const newItem = document.createElement('div');
+            newItem.className = 'text-xs mb-1 flex justify-between items-center';
+            newItem.innerHTML = `
+                <span>
+                    ${data.product_name}
+                    (Qty:${productData.quantity}, ₹${parseFloat(productData.price).toFixed(2)})
+                    ${productData.discount > 0 ? '- Discount: ₹' + parseFloat(productData.discount).toFixed(2) : ''}
+                </span>
+                <button type="button" class="text-red-500 hover:text-red-700 text-sm"
+                        onclick="removeProduct(${invoiceId}, ${data.item_id})">
+                    ×
+                </button>
+            `;
+            displayDiv.appendChild(newItem);
+
+            // Reset form
+            productSelect.selectedIndex = 0;
+            quantityInput.value = 1;
+            priceInput.value = 0;
+            discountInput.value = 0;
+
+            showMessage('Product added successfully', 'success');
+            updateInvoiceTotal(invoiceId);
+        } else {
+            throw new Error(data.message || 'Failed to add product');
+        }
+    })
+    .catch(error => {
+        showMessage('Error: ' + error.message, 'error');
+        console.error('Error:', error);
+    });
+}
+
+// Remove product via AJAX
+async function removeProduct(invoiceId, itemId) {
+    if (!confirm('Are you sure you want to remove this product?')) return;
+
+    // Get reference to the item element
+    const itemElement = document.querySelector(`button[onclick="removeProduct(${invoiceId}, ${itemId})"]`)?.parentElement;
+
+    // Show loading state
+    if (itemElement) {
+        itemElement.innerHTML = `
+            <div class="flex items-center text-gray-500">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Removing...
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch('remove_invoice_product.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                invoice_id: invoiceId,
+                item_id: itemId
+            })
+        });
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Server returned unexpected format: ${text.substring(0, 100)}`);
+        }
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Failed to remove product');
+        }
+
+        // Remove item from UI
+        if (itemElement) {
+            itemElement.remove();
+        }
+
+        // Update total display
+        if (data.new_total !== undefined) {
+            document.getElementById(`total-display-${invoiceId}`).textContent =
+                data.new_total.toFixed(2);
+            document.getElementById(`total-input-${invoiceId}`).value =
+                data.new_total.toFixed(2);
+        }
+
+        showMessage('Product removed successfully', 'success');
+
+    } catch (error) {
+        console.error('Delete Error:', error);
+
+        // Restore item with error state
+        if (itemElement) {
+            itemElement.innerHTML = `
+                <span class="text-red-500">Error: ${error.message}</span>
+                <button type="button"
+                        class="ml-2 text-blue-500 hover:text-blue-700 text-sm"
+                        onclick="removeProduct(${invoiceId}, ${itemId})">
+                    Try Again
+                </button>
+            `;
+        }
+
+        showMessage(`Failed to remove product: ${error.message}`, 'error');
+    }
+}
+// Update price when product changes
+document.querySelectorAll('[id^="new-product-"]').forEach(select => {
+    select.addEventListener('change', function() {
+        const priceInput = this.closest('.grid').querySelector('[id^="new-price-"]');
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption && selectedOption.dataset.price) {
+            priceInput.value = selectedOption.dataset.price;
+        } else {
+            priceInput.value = 0;
+        }
+    });
+});
+
+// Recalculate invoice total
+function updateInvoiceTotal(invoiceId) {
+    fetch('get_invoice_total.php?invoice_id=' + invoiceId)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`total-display-${invoiceId}`).textContent =
+                data.total_amount.toFixed(2);
+            document.getElementById(`total-input-${invoiceId}`).value =
+                data.total_amount.toFixed(2);
+        }
+    });
+}
+
+    // Replace your current addItemRow function with this improved version
     function addItemRow(invoiceId) {
         const container = document.getElementById(`items-edit-${invoiceId}`);
+
+        // Generate a unique ID for the new row (using timestamp and random number)
+        const newId = 'new_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
         const newRow = document.createElement('div');
         newRow.className = 'item-row grid grid-cols-5 gap-2 text-xs';
         newRow.innerHTML = `
+        <input type="hidden" name="item_id[]" value="${newId}">
         <select name="product_id[]" class="p-1 border rounded product-select"
                 onchange="updatePrice(this, ${invoiceId})" required>
             <option value="">Select Product</option>
@@ -707,7 +877,7 @@
                class="editable p-1 border rounded quantity-input"
                onchange="calculateRowTotal(this, ${invoiceId})"
                min="1" required>
-        <input type="number" name="price[]" value="<?php echo $products[0]['price'] ?? 0; ?>"
+        <input type="number" name="price[]" value="0"
                class="editable p-1 border rounded bg-gray-100 price-input"
                onchange="calculateRowTotal(this, ${invoiceId})"
                min="0" step="0.01" required readonly>
@@ -723,10 +893,16 @@
         const addButton = container.querySelector('.add-item-btn');
         container.insertBefore(newRow, addButton);
 
+        // Set default price to first product's price if available
+        if (newRow.querySelector('.product-select').options.length > 1) {
+            newRow.querySelector('.product-select').selectedIndex = 1;
+            const price = newRow.querySelector('.product-select').options[1].getAttribute('data-price');
+            newRow.querySelector('.price-input').value = price;
+        }
+
         // Calculate the new total
         calculateInvoiceTotal(invoiceId);
     }
-
     // Calculate total for a single row
     function calculateRowTotal(input, invoiceId) {
         calculateInvoiceTotal(invoiceId);
@@ -929,18 +1105,37 @@
     }
 
     // Show a single message
-    function showMessage(message, type) {
-        const container = document.getElementById('message-container');
-        const messageDiv = document.createElement('div');
-        messageDiv.className =
-            `p-3 mb-2 rounded-md ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
-        messageDiv.textContent = message;
-        container.appendChild(messageDiv);
+    // Improved showMessage function with Tailwind styling
+function showMessage(message, type = 'info') {
+    const container = document.getElementById('message-container');
+    if (!container) return;
 
-        setTimeout(() => {
-            messageDiv.remove();
-        }, 5000);
-    }
+    const colors = {
+        success: 'bg-green-100 border-green-500 text-green-700',
+        error: 'bg-red-100 border-red-500 text-red-700',
+        info: 'bg-blue-100 border-blue-500 text-blue-700',
+        warning: 'bg-yellow-100 border-yellow-500 text-yellow-700'
+    };
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `p-4 mb-2 border-l-4 rounded ${colors[type]} shadow-md flex items-center`;
+    messageDiv.innerHTML = `
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            ${type === 'success' ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>' :
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+        </svg>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(messageDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        messageDiv.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => messageDiv.remove(), 300);
+    }, 5000);
+}
     </script>
 
     <?php include 'scripts.php'; ?>
