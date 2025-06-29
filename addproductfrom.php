@@ -7,6 +7,7 @@ $message = ""; // Variable to store success/error message
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $product_name = trim($_POST['product_name']);
     $price = $_POST['price'];
+    $weight = $_POST['weight'];
 
     if (empty($product_name) || empty($price)) {
         $message = "<p class='text-red-500'>All fields are required!</p>";
@@ -21,8 +22,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $message = "<p class='text-red-500'>Product already exists!</p>";
         } else {
             // Insert new product
-            $stmt = $conn->prepare("INSERT INTO products (product_name, price) VALUES (?, ?)");
-            $stmt->bind_param("sd", $product_name, $price);
+            $stmt = $conn->prepare("INSERT INTO products (product_name, price,weight) VALUES (?, ?,?)");
+            $stmt->bind_param("sdd", $product_name, $price,$weight);
 
             if ($stmt->execute()) {
                 $message = "<p class='text-green-500'>Product added successfully!</p>";
@@ -57,6 +58,10 @@ $conn->close();
                 <div>
                     <label class="block text-sm font-semibold">Price</label>
                     <input type="number" name="price" class="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold">Weight</label>
+                    <input type="number" name="weight" class="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
                 </div>
             </div>
             <div class="mt-6  justify-end">

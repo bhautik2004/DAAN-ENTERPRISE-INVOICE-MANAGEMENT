@@ -20,7 +20,7 @@ if ($_SESSION['role'] != "Admin") {
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT id, product_name, price FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
+        $sql = "SELECT id, product_name, price, weight FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
         $stmt = $conn->prepare($sql);
         $searchTerm = "%$search%";
         $limitInt = (int)$limit;  // Convert to int and store in a variable
@@ -54,6 +54,7 @@ if ($_SESSION['role'] != "Admin") {
                         <th class="p-2 border">ID</th>
                         <th class="p-2 border">Product Name</th>
                         <th class="p-2 border">Price</th>
+                        <th class="p-2 border">Weight</th>
                         <th class="p-2 border">Actions</th>
                     </tr>
                 </thead>
@@ -72,6 +73,11 @@ if ($_SESSION['role'] != "Admin") {
                             <span id="price-display-<?php echo $row['id']; ?>"> <?php echo $row['price']; ?> </span>
                             <input type="number" id="price-edit-<?php echo $row['id']; ?>"
                                 value="<?php echo $row['price']; ?>" class="w-full p-1 border border-gray-300 hidden">
+                        </td>
+                        <td class="p-2 border">
+                            <span id="weight-display-<?php echo $row['id']; ?>"> <?php echo $row['weight']; ?> </span>
+                            <input type="text" id="weight-edit-<?php echo $row['id']; ?>"
+                                value="<?php echo $row['weight']; ?>" class="w-full p-1 border border-gray-300 hidden">
                         </td>
                         <td class="p-2 border flex justify-center space-x-2">
                             <button onclick="enableEdit(<?php echo $row['id']; ?>)"
@@ -114,8 +120,10 @@ if ($_SESSION['role'] != "Admin") {
         function enableEdit(id) {
             document.getElementById(`name-display-${id}`).classList.add('hidden');
             document.getElementById(`price-display-${id}`).classList.add('hidden');
+            document.getElementById(`weight-display-${id}`).classList.add('hidden');
             document.getElementById(`name-edit-${id}`).classList.remove('hidden');
             document.getElementById(`price-edit-${id}`).classList.remove('hidden');
+            document.getElementById(`weight-edit-${id}`).classList.remove('hidden');
             document.querySelector(`#row-${id} button.bg-blue-500`).classList.add('hidden');
             document.getElementById(`save-btn-${id}`).classList.remove('hidden');
         }
@@ -123,6 +131,7 @@ if ($_SESSION['role'] != "Admin") {
         function saveEdit(id) {
             let name = document.getElementById(`name-edit-${id}`).value;
             let price = document.getElementById(`price-edit-${id}`).value;
+            let weight = document.getElementById(`weight-edit-${id}`).value;
 
             let form = document.createElement('form');
             form.method = 'POST';
@@ -143,9 +152,15 @@ if ($_SESSION['role'] != "Admin") {
             inputPrice.name = 'price';
             inputPrice.value = price;
 
+            let inputWeight = document.createElement('input');
+            inputWeight.type = 'hidden';
+            inputWeight.name = 'weight';
+            inputWeight.value = weight;
+
             form.appendChild(inputId);
             form.appendChild(inputName);
             form.appendChild(inputPrice);
+            form.appendChild(inputWeight);
 
             document.body.appendChild(form);
             form.submit();

@@ -1,48 +1,48 @@
 <?php
 
-// Handle all POST actions before any output
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_invoice'])) {
-    include 'db.php'; // Include DB connection here
-    
-    if (isset($_POST['id'])) {
-        $id = $_POST['id'];
-        
-        // Start transaction for delete
-        $conn->begin_transaction();
+    // Handle all POST actions before any output
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_invoice'])) {
+        include 'db.php'; // Include DB connection here
 
-        try {
-            // First delete items
-            $deleteItems = "DELETE FROM invoice_items WHERE invoice_id = ?";
-            $stmt = $conn->prepare($deleteItems);
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
+        if (isset($_POST['id'])) {
+            $id = $_POST['id'];
 
-            // Then delete invoice
-            $deleteSql = "DELETE FROM invoices WHERE id = ?";
-            $stmt = $conn->prepare($deleteSql);
-            $stmt->bind_param("i", $id);
+            // Start transaction for delete
+            $conn->begin_transaction();
 
-            if ($stmt->execute()) {
-                $conn->commit();
-                $_SESSION['success'] = 'Invoice deleted successfully!';
+            try {
+                // First delete items
+                $deleteItems = "DELETE FROM invoice_items WHERE invoice_id = ?";
+                $stmt        = $conn->prepare($deleteItems);
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+
+                // Then delete invoice
+                $deleteSql = "DELETE FROM invoices WHERE id = ?";
+                $stmt      = $conn->prepare($deleteSql);
+                $stmt->bind_param("i", $id);
+
+                if ($stmt->execute()) {
+                    $conn->commit();
+                    $_SESSION['success'] = 'Invoice deleted successfully!';
+                    header("Location: orders.php");
+                    exit();
+                } else {
+                    throw new Exception($stmt->error);
+                }
+            } catch (Exception $e) {
+                $conn->rollback();
+                $_SESSION['error'] = 'Error deleting invoice: ' . $e->getMessage();
                 header("Location: orders.php");
                 exit();
-            } else {
-                throw new Exception($stmt->error);
             }
-        } catch (Exception $e) {
-            $conn->rollback();
-            $_SESSION['error'] = 'Error deleting invoice: ' . $e->getMessage();
-            header("Location: orders.php");
-            exit();
         }
     }
-}
 
-// Now include other files
-include 'db.php';
-include 'header.php';
-include 'head.php';
+    // Now include other files
+    include 'db.php';
+    include 'header.php';
+    include 'head.php';
 ?>
 
 <body class="bg-gray-100 flex">
@@ -51,12 +51,16 @@ include 'head.php';
         <!-- Message Container -->
         <div id="message-container" class="fixed top-20 right-4 z-50">
             <?php if (isset($_SESSION['success'])): ?>
-                <script>showMessage('<?php echo addslashes($_SESSION['success']); ?>', 'success');</script>
-                <?php unset($_SESSION['success']); ?>
+            <script>
+            showMessage('<?php echo addslashes($_SESSION['success']); ?>', 'success');
+            </script>
+            <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
             <?php if (isset($_SESSION['error'])): ?>
-                <script>showMessage('<?php echo addslashes($_SESSION['error']); ?>', 'error');</script>
-                <?php unset($_SESSION['error']); ?>
+            <script>
+            showMessage('<?php echo addslashes($_SESSION['error']); ?>', 'error');
+            </script>
+            <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
         </div>
 
@@ -64,21 +68,21 @@ include 'head.php';
 
         <?php
             // Search and pagination logic
-            $limit = 10;
-            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-            $start = ($page - 1) * $limit;
-            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $limit         = 10;
+            $page          = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $start         = ($page - 1) * $limit;
+            $search        = isset($_GET['search']) ? trim($_GET['search']) : '';
             $status_filter = isset($_GET['status_filter']) ? trim($_GET['status_filter']) : '';
-            $start_date = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
-            $end_date = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
+            $start_date    = isset($_GET['start_date']) ? trim($_GET['start_date']) : '';
+            $end_date      = isset($_GET['end_date']) ? trim($_GET['end_date']) : '';
 
             $role = $_SESSION['role'] ?? null;
             $user = $_SESSION['user'] ?? null;
 
             // Base query
-            $sql = "SELECT * FROM invoices";
-            $conditions = [];
-            $paramTypes = '';
+            $sql         = "SELECT * FROM invoices";
+            $conditions  = [];
+            $paramTypes  = '';
             $paramValues = [];
 
             if ($role === "Employee") {
@@ -87,7 +91,7 @@ include 'head.php';
                 $paramValues[] = $user;
             }
 
-            if (!empty($search)) {
+            if (! empty($search)) {
                 $conditions[] = "(full_name LIKE ? OR mobile LIKE ? OR barcode_number LIKE ?)";
                 $paramTypes .= 'sss';
                 $paramValues[] = "%$search%";
@@ -95,20 +99,20 @@ include 'head.php';
                 $paramValues[] = "%$search%";
             }
 
-            if (!empty($status_filter)) {
+            if (! empty($status_filter)) {
                 $conditions[] = "status = ?";
                 $paramTypes .= 's';
                 $paramValues[] = $status_filter;
             }
 
-            if (!empty($start_date) && !empty($end_date)) {
+            if (! empty($start_date) && ! empty($end_date)) {
                 $conditions[] = "DATE(created_at) BETWEEN ? AND ?";
                 $paramTypes .= 'ss';
                 $paramValues[] = $start_date;
                 $paramValues[] = $end_date;
             }
 
-            if (!empty($conditions)) {
+            if (! empty($conditions)) {
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             }
 
@@ -119,7 +123,7 @@ include 'head.php';
 
             $stmt = $conn->prepare($sql);
             if ($stmt) {
-                if (!empty($paramTypes)) {
+                if (! empty($paramTypes)) {
                     $stmt->bind_param($paramTypes, ...$paramValues);
                 }
                 $stmt->execute();
@@ -128,28 +132,28 @@ include 'head.php';
 
             // Get total count
             $totalSql = "SELECT COUNT(*) as total FROM invoices";
-            if (!empty($conditions)) {
+            if (! empty($conditions)) {
                 $totalSql .= " WHERE " . implode(" AND ", $conditions);
             }
 
             $totalStmt = $conn->prepare($totalSql);
             if ($totalStmt) {
                 $countParamValues = array_slice($paramValues, 0, count($paramValues) - 2);
-                $countParamTypes = substr($paramTypes, 0, -2);
+                $countParamTypes  = substr($paramTypes, 0, -2);
 
-                if (!empty($countParamTypes)) {
+                if (! empty($countParamTypes)) {
                     $totalStmt->bind_param($countParamTypes, ...$countParamValues);
                 }
                 $totalStmt->execute();
                 $totalResult = $totalStmt->get_result();
-                $totalRow = $totalResult->fetch_assoc();
-                $total = $totalRow['total'];
-                $pages = ($total > 0) ? ceil($total / $limit) : 1;
+                $totalRow    = $totalResult->fetch_assoc();
+                $total       = $totalRow['total'];
+                $pages       = ($total > 0) ? ceil($total / $limit) : 1;
             }
 
             // Fetch all products for dropdowns
             $productsResult = $conn->query("SELECT id, product_name, price FROM products");
-            $products = [];
+            $products       = [];
             while ($productRow = $productsResult->fetch_assoc()) {
                 $products[] = $productRow;
             }
@@ -175,10 +179,14 @@ include 'head.php';
 
                     <select name="status_filter" class="p-2 border border-gray-300 rounded-md">
                         <option value="">All Statuses</option>
-                        <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                        <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                        <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled</option>
-                        <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned</option>
+                        <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
+                        </option>
+                        <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
+                            Completed</option>
+                        <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
+                        </option>
+                        <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
+                        </option>
                     </select>
 
                     <input type="date" name="start_date" class="p-2 border border-gray-300 rounded-md"
@@ -214,32 +222,33 @@ include 'head.php';
                     </thead>
                     <tbody class="divide-y divide-gray-300">
                         <?php while ($row = $result->fetch_assoc()):
-                            // Fetch items for this invoice
-                            $items_sql = "SELECT ii.*, p.product_name, p.price
-                                         FROM invoice_items ii
-                                         JOIN products p ON ii.product_id = p.id
-                                         WHERE ii.invoice_id = ?";
-                            $items_stmt = $conn->prepare($items_sql);
-                            $items_stmt->bind_param("i", $row['id']);
-                            $items_stmt->execute();
-                            $items_result = $items_stmt->get_result();
-                            $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
-                        ?>
+                                // Fetch items for this invoice
+                                $items_sql = "SELECT ii.*, p.product_name, p.price
+	                                         FROM invoice_items ii
+	                                         JOIN products p ON ii.product_id = p.id
+	                                         WHERE ii.invoice_id = ?";
+                                $items_stmt = $conn->prepare($items_sql);
+                                $items_stmt->bind_param("i", $row['id']);
+                                $items_stmt->execute();
+                                $items_result  = $items_stmt->get_result();
+                                $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
+                            ?>
                         <tr class="text-left bg-gray-50 hover:bg-gray-100">
-                            <td class="p-2 border"><input type="checkbox" name="selected[]" value="<?php echo $row['id']; ?>"></td>
+                            <td class="p-2 border"><input type="checkbox" name="selected[]"
+                                    value="<?php echo $row['id']; ?>"></td>
                             <td class="p-2 border text-center flex space-x-2">
-                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>" 
-                                   class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
+                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
+                                    class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
                                 <?php if ($_SESSION['role'] == 'Admin'): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                     <button type="submit" name="delete_invoice"
-                                            class="bg-red-500 text-white px-3 py-1 text-xs rounded"
-                                            onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
+                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
+                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
                                 </form>
                                 <?php endif; ?>
                                 <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
-                                        onclick="printInvoice(<?php echo $row['id']; ?>)">Print</button>
+                                    onclick='printInvoice(<?php echo json_encode($row); ?>)'>Print</button>
                             </td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['status']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile']); ?></td>
@@ -265,7 +274,8 @@ include 'head.php';
                             <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
                             <td class="p-2 border">₹<?php echo number_format($row['total_amount'], 2); ?></td>
                             <td class="p-2 border">₹<?php echo number_format($row['advanced_payment'], 2); ?></td>
-                            <td class="p-2 border"><?php echo date("d-m-Y h:i A", strtotime($row['created_at'])); ?></td>
+                            <td class="p-2 border"><?php echo date("d-m-Y h:i A", strtotime($row['created_at'])); ?>
+                            </td>
                         </tr>
                         <?php endwhile; ?>
                     </tbody>
@@ -296,15 +306,15 @@ include 'head.php';
 
             <?php
                 $start_page = max(1, $page - 2);
-                $end_page = min($pages, $page + 2);
+                $end_page   = min($pages, $page + 2);
 
                 if ($start_page > 1) {
                     echo '<span class="px-2">...</span>';
                 }
 
-                for ($i = $start_page; $i <= $end_page; $i++): ?>
+            for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -328,8 +338,9 @@ include 'head.php';
 
         <!-- Page Info -->
         <div class="text-center text-sm text-gray-600 mt-2">
-            Page <?php echo $page; ?> of <?php echo $pages; ?> |
-            Showing <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of <?php echo $total; ?> records
+            Page <?php echo $page; ?> of<?php echo $pages; ?> |
+            Showing <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
+            records
         </div>
 
         <!-- Export Form -->
@@ -365,7 +376,7 @@ include 'head.php';
     // Print selected invoices
     function printSelectedInvoices() {
         const selected = Array.from(document.querySelectorAll('input[name="selected[]"]:checked'))
-                             .map(checkbox => checkbox.value);
+            .map(checkbox => checkbox.value);
         if (selected.length === 0) {
             showMessage('Please select at least one invoice', 'error');
             return;
@@ -376,7 +387,7 @@ include 'head.php';
     // Print combined invoices
     function printCombinedInvoices() {
         const selected = Array.from(document.querySelectorAll('input[name="selected[]"]:checked'))
-                             .map(checkbox => checkbox.value);
+            .map(checkbox => checkbox.value);
         if (selected.length === 0) {
             showMessage('Please select at least one invoice', 'error');
             return;
@@ -419,4 +430,5 @@ include 'head.php';
 
     <?php include 'scripts.php'; ?>
 </body>
+
 </html>

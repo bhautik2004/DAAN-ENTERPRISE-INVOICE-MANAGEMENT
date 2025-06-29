@@ -11,7 +11,7 @@
             mainContent.classList.remove('ml-64');
             mainContent.classList.add('ml-16');
 
-            sidebarTexts.forEach(text => text.classList.add('hidden')); 
+            sidebarTexts.forEach(text => text.classList.add('hidden'));
             sidebarLogo.classList.add('hidden'); // Hide logo
 
             document.getElementById('toggleSidebar').style.right = '-60px'; // Adjust button position
@@ -62,7 +62,7 @@ async function checkPincode() {
 function formatDate(dateString) {
     let date = new Date(dateString);
 
-    let day = String(date.getDate()).padStart(2, '0'); 
+    let day = String(date.getDate()).padStart(2, '0');
     let month = String(date.getMonth() + 1).padStart(2, '0');
     let year = date.getFullYear();
 
@@ -70,12 +70,42 @@ function formatDate(dateString) {
     let minutes = String(date.getMinutes()).padStart(2, '0');
 
     let ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12; 
+    hours = hours % 12 || 12;
 
     return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
 }
 
 function printInvoice(invoiceData) {
+    // Convert from PHP array to JS object if needed
+    if (typeof invoiceData === 'string') {
+        try {
+            invoiceData = JSON.parse(invoiceData);
+        } catch (e) {
+            console.error("Error parsing invoice data:", e);
+            return;
+        }
+    }
+
+    // Ensure we have all required fields with fallbacks
+    invoiceData = {
+        ...invoiceData,
+        address1: invoiceData.address1 || '',
+        address2: invoiceData.address2 || '',
+        village: invoiceData.village || '',
+        full_name: invoiceData.full_name || '',
+        post_name: invoiceData.post_name || '',
+        sub_district: invoiceData.sub_district || '',
+        district: invoiceData.district || '',
+        pincode: invoiceData.pincode || '',
+        mobile: invoiceData.mobile || '',
+        mobile2: invoiceData.mobile2 || '',
+        total_amount: invoiceData.total_amount || 0,
+        advanced_payment: invoiceData.advanced_payment || 0,
+        product_name: invoiceData.product_name || 'Product',
+        quantity: invoiceData.quantity || 1,
+        employee_name: invoiceData.employee_name || ''
+    };
+
     let addressHTML = `
         <tr>
             <td colspan="3" style="padding: 3px; font-family: Calibri; font-size: 18px; font-weight: 700; border:none;">
@@ -108,14 +138,14 @@ function printInvoice(invoiceData) {
         <title>Shipping Label Form</title>
         <style>
             @page {
-                size: 105mm 148mm; /* Exact A6 dimensions */
-                margin: 0; /* No default margins */
+                size: 105mm 148mm;
+                margin: 0;
             }
             body {
                 margin: 0;
-                padding: 2mm; /* Safe inner padding */
-                width: 101mm; /* 105mm - 4mm total padding */
-                height: 144mm; /* 148mm - 4mm total padding */
+                padding: 2mm;
+                width: 101mm;
+                height: 144mm;
                 font-size: 14px;
                 box-sizing: border-box;
                 display: flex;
@@ -125,7 +155,7 @@ function printInvoice(invoiceData) {
             .invoice-container {
                 width: 100%;
                 height: 100%;
-                overflow: hidden; /* Prevent any overflow */
+                overflow: hidden;
             }
             table {
                 width: 100%;
@@ -150,14 +180,13 @@ function printInvoice(invoiceData) {
                 font-size: 12px;
                 line-height: 1.2;
             }
-            /* Column width adjustments */
-            td:nth-child(1) { /* Customer No column */
+            td:nth-child(1) {
                 width: 40%;
             }
-            td:nth-child(2) { /* COD column */
+            td:nth-child(2) {
                 width: 15%;
             }
-            td:nth-child(3) { /* Amount column */
+            td:nth-child(3) {
                 width: 45%;
             }
         </style>
@@ -188,7 +217,7 @@ function printInvoice(invoiceData) {
                 </tr>
                 <tr>
                     <td align="center" colspan="3" style="font-family: Calibri; font-weight: 800; font-size: 38px;">
-                        મુ - ${invoiceData.village} 
+                        મુ - ${invoiceData.village}
                     </td>
                 </tr>
                 <tr>
@@ -247,7 +276,6 @@ function printInvoice(invoiceData) {
     printWindow.document.write(invoiceHTML);
     printWindow.document.close();
 }
-
 // function enableEdit(id) {
 //     const row = document.getElementById(`row_${id}`);
 //     const editables = row.querySelectorAll('.editable');
@@ -283,7 +311,7 @@ function printSelectedInvoices() {
             village: row.querySelector('input[name="village"]').value,
             post_name: row.querySelector('input[name="post_name"]').value,
             mobile2: row.querySelector('input[name="mobile2"]').value,
-            product_name: row.querySelector('input[name="product_name"]').value, 
+            product_name: row.querySelector('input[name="product_name"]').value,
             quantity: row.querySelector('input[name="quantity"]').value,
             employee_name: row.querySelector('input[name="employee_name"]').value,
             total_amount: row.querySelector('input[name="total_amount"]').value,
@@ -343,7 +371,7 @@ function generateInvoiceHTML(invoiceData) {
                 </tr>
                 <tr>
                     <td align="center" colspan="3" style="font-family: Calibri; font-weight: 800; font-size: 38px;">
-                        મુ - ${invoiceData.village} 
+                        મુ - ${invoiceData.village}
                     </td>
                 </tr>
                 <tr>
@@ -509,7 +537,7 @@ function printCombinedInvoices() {
     let combinedTotal = 0;
     let combinedAdvanced = 0;
     let products = [];
-    
+
     // Get data from first selected invoice (for common fields)
     const firstRow = selected[0].closest('tr');
     const invoiceData = {
@@ -661,7 +689,7 @@ function printCombinedInvoiceTemplate(invoiceData) {
                 </tr>
                 <tr>
                     <td align="center" colspan="3" style="font-family: Calibri; font-weight: 800; font-size: 38px;">
-                        મુ - ${invoiceData.village} 
+                        મુ - ${invoiceData.village}
                     </td>
                 </tr>
                 <tr>
@@ -732,20 +760,20 @@ function printCombinedInvoiceTemplate(invoiceData) {
 function showMessage(message, type = 'success') {
     const container = document.getElementById('message-container');
     const messageDiv = document.createElement('div');
-    
+
     // Set classes based on message type
-    const bgColor = type === 'success' ? 'bg-green-500' : 
-                   type === 'error' ? 'bg-red-500' : 
+    const bgColor = type === 'success' ? 'bg-green-500' :
+                   type === 'error' ? 'bg-red-500' :
                    'bg-blue-500';
-    
+
     messageDiv.className = `${bgColor} text-white px-4 py-2 rounded shadow-lg mb-2 flex justify-between items-center`;
     messageDiv.innerHTML = `
         <span>${message}</span>
         <button onclick="this.parentElement.remove()" class="ml-4 text-white font-bold">&times;</button>
     `;
-    
+
     container.appendChild(messageDiv);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         messageDiv.remove();
@@ -756,19 +784,19 @@ function showMessage(message, type = 'success') {
 function showErrorMessages(errors) {
     const container = document.getElementById('message-container');
     const messageDiv = document.createElement('div');
-    
+
     messageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded shadow-lg mb-2';
-    
+
     let html = '<div class="font-bold mb-1">Please fix the following errors:</div><ul class="list-disc pl-5">';
     errors.forEach(error => {
         html += `<li>${error}</li>`;
     });
     html += '</ul>';
-    
+
     messageDiv.innerHTML = html + '<button onclick="this.parentElement.remove()" class="mt-2 text-white font-bold float-right">&times;</button>';
-    
+
     container.appendChild(messageDiv);
-    
+
     // Auto-remove after 8 seconds (longer for error messages)
     setTimeout(() => {
         messageDiv.remove();
