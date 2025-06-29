@@ -55,13 +55,13 @@
             showMessage('<?php echo addslashes($_SESSION['success']); ?>', 'success');
             </script>
             <?php unset($_SESSION['success']); ?>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['error'])): ?>
+<?php endif; ?>
+<?php if (isset($_SESSION['error'])): ?>
             <script>
             showMessage('<?php echo addslashes($_SESSION['error']); ?>', 'error');
             </script>
             <?php unset($_SESSION['error']); ?>
-            <?php endif; ?>
+<?php endif; ?>
         </div>
 
         <h2 class="text-2xl font-bold text-[var(--primary-color)] mb-4 text-center">Orders</h2>
@@ -179,13 +179,13 @@
 
                     <select name="status_filter" class="p-2 border border-gray-300 rounded-md">
                         <option value="">All Statuses</option>
-                        <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
+                        <option value="Pending"                                                <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
                         </option>
-                        <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
+                        <option value="Completed"                                                  <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
+                        <option value="Canceled"                                                 <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
                         </option>
-                        <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
+                        <option value="Returned"                                                 <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
                     </select>
 
@@ -223,32 +223,39 @@
                     <tbody class="divide-y divide-gray-300">
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
-                                $items_sql = "SELECT ii.*, p.product_name, p.price
-	                                         FROM invoice_items ii
-	                                         JOIN products p ON ii.product_id = p.id
-	                                         WHERE ii.invoice_id = ?";
+                                $items_sql = "SELECT ii.*, p.product_name, p.price,p.weight,p.sku
+		                                         FROM invoice_items ii
+		                                         JOIN products p ON ii.product_id = p.id
+		                                         WHERE ii.invoice_id = ?";
                                 $items_stmt = $conn->prepare($items_sql);
                                 $items_stmt->bind_param("i", $row['id']);
                                 $items_stmt->execute();
                                 $items_result  = $items_stmt->get_result();
                                 $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
                             ?>
-                        <tr class="text-left bg-gray-50 hover:bg-gray-100">
-                            <td class="p-2 border"><input type="checkbox" name="selected[]"
-                                    value="<?php echo $row['id']; ?>"></td>
-                            <td class="p-2 border text-center flex space-x-2">
-                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
-                                    class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
-                                <?php if ($_SESSION['role'] == 'Admin'): ?>
-                                <form method="POST" style="display:inline;">
-                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                    <button type="submit" name="delete_invoice"
-                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
-                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
-                                </form>
-                                <?php endif; ?>
+	                        <tr class="text-left bg-gray-50 hover:bg-gray-100">
+	                            <td class="p-2 border"><input type="checkbox" name="selected[]"
+	                                    value="<?php echo $row['id']; ?>"></td>
+	                            <td class="p-2 border text-center flex space-x-2">
+	                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
+	                                    class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
+	                                <?php if ($_SESSION['role'] == 'Admin'): ?>
+	                                <form method="POST" style="display:inline;">
+	                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+	                                    <button type="submit" name="delete_invoice"
+	                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
+	                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
+	                                </form>
+	                                <?php endif; ?>
+
+
+                                <?php
+                                    $row['invoice_items'] = $invoice_items; // Add product info into the row before sending to JS
+                                ?>
                                 <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
                                     onclick='printInvoice(<?php echo json_encode($row); ?>)'>Print</button>
+
+
                             </td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['status']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile']); ?></td>
@@ -267,7 +274,7 @@
                                     ₹<?php echo number_format($item['price'], 2); ?>)
                                     <?php if ($item['discount'] > 0): ?>
                                     - Discount: ₹<?php echo number_format($item['discount'], 2); ?>
-                                    <?php endif; ?>
+<?php endif; ?>
                                 </div>
                                 <?php endforeach; ?>
                             </td>
@@ -314,7 +321,7 @@
 
             for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded                                                <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                                                               <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -338,8 +345,8 @@
 
         <!-- Page Info -->
         <div class="text-center text-sm text-gray-600 mt-2">
-            Page <?php echo $page; ?> of<?php echo $pages; ?> |
-            Showing <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
+            Page                 <?php echo $page; ?> of<?php echo $pages; ?> |
+            Showing                    <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
             records
         </div>
 

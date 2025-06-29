@@ -20,7 +20,7 @@ if ($_SESSION['role'] != "Admin") {
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT id, product_name, price, weight FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
+        $sql = "SELECT id, product_name, sku, price, weight FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
         $stmt = $conn->prepare($sql);
         $searchTerm = "%$search%";
         $limitInt = (int)$limit;  // Convert to int and store in a variable
@@ -53,6 +53,7 @@ if ($_SESSION['role'] != "Admin") {
                     <tr class="bg-gray-200">
                         <th class="p-2 border">ID</th>
                         <th class="p-2 border">Product Name</th>
+                        <th class="p-2 border">SKU</th>
                         <th class="p-2 border">Price</th>
                         <th class="p-2 border">Weight</th>
                         <th class="p-2 border">Actions</th>
@@ -67,6 +68,13 @@ if ($_SESSION['role'] != "Admin") {
                                 <?php echo htmlspecialchars($row['product_name']); ?> </span>
                             <input type="text" id="name-edit-<?php echo $row['id']; ?>"
                                 value="<?php echo htmlspecialchars($row['product_name']); ?>"
+                                class="w-full p-1 border border-gray-300 hidden">
+                        </td>
+                        <td class="p-2 border">
+                            <span id="sku-display-<?php echo $row['id']; ?>">
+                                <?php echo htmlspecialchars($row['sku']); ?> </span>
+                            <input type="text" id="sku-edit-<?php echo $row['id']; ?>"
+                                value="<?php echo htmlspecialchars($row['sku']); ?>"
                                 class="w-full p-1 border border-gray-300 hidden">
                         </td>
                         <td class="p-2 border">
@@ -119,9 +127,11 @@ if ($_SESSION['role'] != "Admin") {
         <script>
         function enableEdit(id) {
             document.getElementById(`name-display-${id}`).classList.add('hidden');
+            document.getElementById(`sku-display-${id}`).classList.add('hidden');
             document.getElementById(`price-display-${id}`).classList.add('hidden');
             document.getElementById(`weight-display-${id}`).classList.add('hidden');
             document.getElementById(`name-edit-${id}`).classList.remove('hidden');
+            document.getElementById(`sku-edit-${id}`).classList.remove('hidden');
             document.getElementById(`price-edit-${id}`).classList.remove('hidden');
             document.getElementById(`weight-edit-${id}`).classList.remove('hidden');
             document.querySelector(`#row-${id} button.bg-blue-500`).classList.add('hidden');
@@ -130,6 +140,7 @@ if ($_SESSION['role'] != "Admin") {
 
         function saveEdit(id) {
             let name = document.getElementById(`name-edit-${id}`).value;
+            let sku = document.getElementById(`sku-edit-${id}`).value;
             let price = document.getElementById(`price-edit-${id}`).value;
             let weight = document.getElementById(`weight-edit-${id}`).value;
 
@@ -147,6 +158,11 @@ if ($_SESSION['role'] != "Admin") {
             inputName.name = 'product_name';
             inputName.value = name;
 
+            let inputSku = document.createElement('input');
+            inputSku.type = 'hidden';
+            inputSku.name = 'sku';
+            inputSku.value = sku;
+
             let inputPrice = document.createElement('input');
             inputPrice.type = 'hidden';
             inputPrice.name = 'price';
@@ -159,6 +175,7 @@ if ($_SESSION['role'] != "Admin") {
 
             form.appendChild(inputId);
             form.appendChild(inputName);
+            form.appendChild(inputSku);
             form.appendChild(inputPrice);
             form.appendChild(inputWeight);
 

@@ -6,6 +6,7 @@ $message = ""; // Variable to store success/error message
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $product_name = trim($_POST['product_name']);
+    $sku = trim($_POST['sku']);
     $price = $_POST['price'];
     $weight = $_POST['weight'];
 
@@ -22,8 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $message = "<p class='text-red-500'>Product already exists!</p>";
         } else {
             // Insert new product
-            $stmt = $conn->prepare("INSERT INTO products (product_name, price,weight) VALUES (?, ?,?)");
-            $stmt->bind_param("sdd", $product_name, $price,$weight);
+            $stmt = $conn->prepare("INSERT INTO products (product_name,sku, price,weight) VALUES (?,?, ?,?)");
+            $stmt->bind_param("ssdd", $product_name,$sku, $price,$weight);
 
             if ($stmt->execute()) {
                 $message = "<p class='text-green-500'>Product added successfully!</p>";
@@ -54,6 +55,10 @@ $conn->close();
                 <div>
                     <label class="block text-sm font-semibold">Product Name</label>
                     <input type="text" name="product_name" class="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold">SKU</label>
+                    <input type="text" name="sku" class="w-full p-2 mt-1 border border-gray-300 rounded-md" required>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold">Price</label>

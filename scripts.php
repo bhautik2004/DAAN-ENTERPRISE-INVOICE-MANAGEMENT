@@ -1,32 +1,32 @@
 <script>
-   document.getElementById('toggleSidebar').addEventListener('click', function() {
-        let sidebar = document.getElementById('sidebar');
-        let mainContent = document.getElementById('mainContent');
-        let sidebarTexts = document.querySelectorAll('.sidebar-text');
-        let sidebarLogo = document.querySelector('.sidebar-logo');
+document.getElementById('toggleSidebar').addEventListener('click', function() {
+    let sidebar = document.getElementById('sidebar');
+    let mainContent = document.getElementById('mainContent');
+    let sidebarTexts = document.querySelectorAll('.sidebar-text');
+    let sidebarLogo = document.querySelector('.sidebar-logo');
 
-        if (sidebar.classList.contains('w-64')) {
-            sidebar.classList.remove('w-64', 'p-5');
-            sidebar.classList.add('w-16', 'p-2');
-            mainContent.classList.remove('ml-64');
-            mainContent.classList.add('ml-16');
+    if (sidebar.classList.contains('w-64')) {
+        sidebar.classList.remove('w-64', 'p-5');
+        sidebar.classList.add('w-16', 'p-2');
+        mainContent.classList.remove('ml-64');
+        mainContent.classList.add('ml-16');
 
-            sidebarTexts.forEach(text => text.classList.add('hidden'));
-            sidebarLogo.classList.add('hidden'); // Hide logo
+        sidebarTexts.forEach(text => text.classList.add('hidden'));
+        sidebarLogo.classList.add('hidden'); // Hide logo
 
-            document.getElementById('toggleSidebar').style.right = '-60px'; // Adjust button position
-        } else {
-            sidebar.classList.remove('w-16', 'p-2');
-            sidebar.classList.add('w-64', 'p-5');
-            mainContent.classList.remove('ml-16');
-            mainContent.classList.add('ml-64');
+        document.getElementById('toggleSidebar').style.right = '-60px'; // Adjust button position
+    } else {
+        sidebar.classList.remove('w-16', 'p-2');
+        sidebar.classList.add('w-64', 'p-5');
+        mainContent.classList.remove('ml-16');
+        mainContent.classList.add('ml-64');
 
-            sidebarTexts.forEach(text => text.classList.remove('hidden')); // Show text
-            sidebarLogo.classList.remove('hidden'); // Show logo
+        sidebarTexts.forEach(text => text.classList.remove('hidden')); // Show text
+        sidebarLogo.classList.remove('hidden'); // Show logo
 
-            document.getElementById('toggleSidebar').style.right = '-45px'; // Reset button position
-        }
-    });
+        document.getElementById('toggleSidebar').style.right = '-45px'; // Reset button position
+    }
+});
 
 
 async function checkPincode() {
@@ -76,213 +76,225 @@ function formatDate(dateString) {
 }
 
 function printInvoice(invoiceData) {
-    // Convert from PHP array to JS object if needed
     if (typeof invoiceData === 'string') {
         try {
             invoiceData = JSON.parse(invoiceData);
         } catch (e) {
-            console.error("Error parsing invoice data:", e);
+            console.error("Invalid invoice data", e);
             return;
         }
     }
 
-    // Ensure we have all required fields with fallbacks
-    invoiceData = {
-        ...invoiceData,
-        address1: invoiceData.address1 || '',
-        address2: invoiceData.address2 || '',
-        village: invoiceData.village || '',
-        full_name: invoiceData.full_name || '',
-        post_name: invoiceData.post_name || '',
-        sub_district: invoiceData.sub_district || '',
-        district: invoiceData.district || '',
-        pincode: invoiceData.pincode || '',
-        mobile: invoiceData.mobile || '',
-        mobile2: invoiceData.mobile2 || '',
-        total_amount: invoiceData.total_amount || 0,
-        advanced_payment: invoiceData.advanced_payment || 0,
-        product_name: invoiceData.product_name || 'Product',
-        quantity: invoiceData.quantity || 1,
-        employee_name: invoiceData.employee_name || ''
-    };
+    const {
+        full_name = '', address1 = '', address2 = '', village = '', district = '',
+            sub_district = '', post_name = '', mobile = '', mobile2 = '',
+            pincode = '', total_amount = 0, advanced_payment = 0,
+            employee_name = '', created_at = '', id = '', invoice_items = []
+    } = invoiceData;
 
-    let addressHTML = `
-        <tr>
-            <td colspan="3" style="padding: 3px; font-family: Calibri; font-size: 18px; font-weight: 700; border:none;">
-                ${invoiceData.address1}
-            </td>
-        </tr>`;
+    const codAmount = total_amount;
+    const orderDate = new Date(created_at).toLocaleDateString('en-GB');
 
-    if (invoiceData.address2) {
-        addressHTML += `
-        <tr>
-            <td colspan="3" style="padding: 3px; font-family: Calibri; font-size: 18px; font-weight: 700; border:none;">
-                ${invoiceData.address2}
-            </td>
-        </tr>`;
+    // Function to convert number to words
+    function numberToWords(num) {
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+            'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+        ];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        if (num === 0) return 'Zero Rupees';
+
+        function convertLessThanOneThousand(n) {
+            if (n === 0) return '';
+            if (n < 20) return ones[n];
+            const digit = n % 10;
+            if (n < 100) return tens[Math.floor(n / 10)] + (digit ? ' ' + ones[digit] : '');
+            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convertLessThanOneThousand(n % 100) :
+                '');
+        }
+
+        let result = '';
+        if (num >= 10000000) {
+            result += convertLessThanOneThousand(Math.floor(num / 10000000)) + ' Crore ';
+            num %= 10000000;
+        }
+        if (num >= 100000) {
+            result += convertLessThanOneThousand(Math.floor(num / 100000)) + ' Lakh ';
+            num %= 100000;
+        }
+        if (num >= 1000) {
+            result += convertLessThanOneThousand(Math.floor(num / 1000)) + ' Thousand ';
+            num %= 1000;
+        }
+        if (num > 0) {
+            result += convertLessThanOneThousand(num);
+        }
+        return result.trim() + ' Rupees';
     }
 
-    let printWindow = window.open('', '', 'width=800,height=600');
+    const codAmountInWords = numberToWords(codAmount);
 
-    if (!printWindow) {
-        alert("Popup blocked! Please allow pop-ups and try again.");
-        return;
-    }
+    const itemsHTML = invoice_items.map((item) => `
+        <tr>
+            <td>${item.sku}</td>
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.weight || 'N/A'}gm</td>
+            <td>₹${item.price}</td>
+        </tr>
+    `).join('');
 
-    let invoiceHTML = `
-    <!DOCTYPE html>
-    <html lang="gu">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Shipping Label Form</title>
-        <style>
-            @page {
-                size: 105mm 148mm;
-                margin: 0;
-            }
-            body {
-                margin: 0;
-                padding: 2mm;
-                width: 101mm;
-                height: 144mm;
-                font-size: 14px;
-                box-sizing: border-box;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            .invoice-container {
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-            }
-            table {
-                width: 100%;
-                height: 100%;
-                border-collapse: collapse;
-                border: 2px solid black;
-                box-sizing: border-box;
-                table-layout: fixed;
-            }
-            td {
-                padding: 2px;
-                font-family: Calibri;
-                font-size: 14px;
-                font-weight: 700;
-                border: 2px solid black;
-                word-wrap: break-word;
-            }
-            .compact-row {
-                height: 18px;
-            }
-            .small-text {
-                font-size: 12px;
-                line-height: 1.2;
-            }
-            td:nth-child(1) {
-                width: 40%;
-            }
-            td:nth-child(2) {
-                width: 15%;
-            }
-            td:nth-child(3) {
-                width: 45%;
-            }
-        </style>
-    </head>
-    <body onload="window.print(); setTimeout(() => window.close(), 100);">
-        <div class="invoice-container">
-            <table>
-                <tr class="compact-row">
-                    <td align="center" colspan="3" style="font-family: Bahnschrift; font-weight: 700; font-size: 16px;">
-                        BOOK UNDER SPEED POST COD BNPL SERVICE
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" style="font-family: Bahnschrift; font-size: 14px;">
-                        CUSTOMER NO
-                    </td>
-                    <td align="center" rowspan="2" style="font-family: Bahnschrift; font-size: 30px;">
-                        COD
-                    </td>
-                    <td align="center" rowspan="2" style="font-size: 30px; font-family: Palatino Linotype;">
-                        ${invoiceData.total_amount - invoiceData.advanced_payment}/-
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" style="background-color: black; color:white; font-family: Bahnschrift;">
-                        56759
-                    </td>
-                </tr>
+    const printWindow = window.open('', '', 'width=800,height=600');
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Print Invoice</title>
+    <style>
+        @page {
+            size: 105mm 148mm;
+            margin: 2mm; /* safe margin for border visibility */
+        }
+        html, body {
+            width: 105mm;
+            height: 148mm;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        .wrapper {
+            border: 2px solid black;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .section {
+            border-bottom: 1px solid black;
+            padding: 5px;
+            margin: 0;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        .header-table, .items-table, .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .header-table td,
+        .footer-table td {
+            padding: 2px;
+            vertical-align: top;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid black;
+            padding: 2px;
+            font-size: 12px;
+            text-align: left;
+        }
+        .items-container {
+            max-height: 52mm; /* LIMIT product section height */
+            overflow: hidden;
+        }
+        .bold { font-weight: bold; }
+        .center { text-align: center; }
+        .small { font-size: 9px; }
+        .cod-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cod-amount {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body onload="window.print(); setTimeout(() => window.close(), 100);">
+    <div class="wrapper">
+
+        <div class="section" style="padding: 0;">
+            <div style="display: flex; border-top: 1px solid black; border-bottom: 1px solid black;">
+                <!-- COD Section -->
+                <div style="flex: 2; padding: 3px; border-right: 1px solid black; margin: 0;">
+                    <div style="font-size: 18px; font-weight: bold;">SPEED POST COD  <span style="font-size: 24px; font-weight: bold;">${codAmount}/-</span></div>
+                    <div style="font-size: 12px; text-align:center">${codAmountInWords} Only</div>
+                </div>
+                
+                <!-- Customer ID Section -->
+                <div style="flex: 1; padding: 3px; margin: 0;">
+                    <div style="font-size: 16px; font-weight: bold; text-align:center">CUSTOMER ID</div>
+                    <div style="font-size: 16px; font-weight: bold; text-align:center">${id}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="bold"><b>To:</div>
+            <div style="text-transform: uppercase; font-size: 15px;">${full_name}</div></b>
+            <div style="font-size: 15px;">${address1}${address2 ? ', ' + address2 : ''}</div>
+            <div style="font-size: 15px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
+            <div class="bold">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+        </div>
+
+        <div class="section">
+            <table class="header-table">
                 <tr>
-                    <td align="center" colspan="3" style="font-family: Calibri; font-weight: 800; font-size: 38px;">
-                        મુ - ${invoiceData.village}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        ${invoiceData.full_name}
-                    </td>
-                </tr>
-                ${addressHTML}
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        પોસ્ટ - ${invoiceData.post_name}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        તાલુકો - ${invoiceData.sub_district}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        જીલ્લો - ${invoiceData.district}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        પિન - ${invoiceData.pincode}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 18px; padding: 2px; border:none;">
-                        મો - ${invoiceData.mobile} ${invoiceData.mobile2 ? '/ ' + invoiceData.mobile2 : ''}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="small-text" style="padding: 3px;">
-                        🚗 SHIPPED BY- PRS HOMOEO PHARMACY, 406, SANKALP ICON, OPP PARIKH HOSPITAL, NEW NIKOL, AHMEDABAD, 382350<br> 📞 MO-79849 30709
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="small-text" style="padding: 3px;">
-                        ⚠️ ટપાલી ને નોંધ - ખાસ ફોન કરીને કુરિયર આપવા જવું. જો ડેટા બતાવતો ના હોય તો કાયદા પ્રમાણે 2-3 દિવસ માટે કુરિયર પોસ્ટ ઓફિસ મા જ રાખવું અને પછી ફરી વાર ડિલિવરી આપવાની રહેશે. જો કોઈ ખોટા કારણ થી કુરિયર રિટર્ન થસે તો કાયદેસર ની કાર્યવાહી કરવામાં આવશે.
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" colspan="3" style="font-family: Bahnschrift; font-size: 14px;">
-                        ${invoiceData.product_name} - ${invoiceData.quantity} / ${invoiceData.employee_name}
-                    </td>
+                    <td><strong>Order date :</strong> ${orderDate}</td>
+                    <td><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
             </table>
         </div>
-    </body>
-    </html>
-    `;
+
+        <div class="section items-container">
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Item Name</th>
+                        <th>Qty.</th>
+                        <th>Weight</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHTML}
+                    <tr>
+                        <td colspan="4" class="bold">Order Total</td>
+                        <td class="bold">₹${codAmount}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <table class="footer-table">
+                <tr><td><b>Pickup and Return Address:</b></td></tr>
+                <tr><td><strong>DAAN ENTERPRISE</strong></td></tr>
+                <tr><td>DAAN ENTERPRISE 220-SCOND FLOOR-VISHAL SUPREM.. OPP. TORRENT POWER S P. RING ROAD, NIKOL-AHMEDABAD AHMEDABAD, Gujarat</td></tr>
+                <tr><td>India : 7693478838 &nbsp; GST No, 24FJQFP2348G1ZT</td></tr>
+                <tr><td></td></tr>
+                <tr><td class="bold">For any query please contact:</td></tr>
+                <tr><td><b>Mobile:</b> 7693478838 <b>Email:</b> daanpost5@gmail.com</td></tr>
+            </table>
+        </div>
+
+        <div class="section small">
+            This is computer generated document hence does not required signature.<br>
+            <b>Note : </b>Self declaration under section 12(2)(b) of the Dehli Jurisdiction.<br>
+            Goods once sold will only be taken back or exchanged as per the store's exchange/return policy.
+        </div>
+    </div>
+</body>
+</html>`;
 
     printWindow.document.open();
-    printWindow.document.write(invoiceHTML);
+    printWindow.document.write(htmlContent);
     printWindow.document.close();
 }
-// function enableEdit(id) {
-//     const row = document.getElementById(`row_${id}`);
-//     const editables = row.querySelectorAll('.editable');
-//     editables.forEach(input => input.disabled = false);
-//     row.querySelector('.edit-btn').classList.add('hidden');
-//     row.querySelector('.save-btn').classList.remove('hidden');
-// }
 
 function printSelectedInvoices() {
     // Get all selected checkboxes
@@ -316,7 +328,7 @@ function printSelectedInvoices() {
             employee_name: row.querySelector('input[name="employee_name"]').value,
             total_amount: row.querySelector('input[name="total_amount"]').value,
             advanced_payment: row.querySelector('input[name="advanced_payment"]').value,
-            created_at:row.querySelector('input[name="created_at"]').value,
+            created_at: row.querySelector('input[name="created_at"]').value,
             status: row.querySelector('select[name="status"]').value
         };
 
@@ -552,7 +564,7 @@ function printCombinedInvoices() {
         post_name: firstRow.querySelector('input[name="post_name"]').value,
         mobile2: firstRow.querySelector('input[name="mobile2"]').value,
         product_name: '', // Leave empty as we'll handle products separately
-        quantity: '',     // Leave empty as we'll handle quantities separately
+        quantity: '', // Leave empty as we'll handle quantities separately
         employee_name: firstRow.querySelector('input[name="employee_name"]').value,
         total_amount: parseFloat(firstRow.querySelector('input[name="total_amount"]').value),
         advanced_payment: parseFloat(firstRow.querySelector('input[name="advanced_payment"]').value),
@@ -563,7 +575,9 @@ function printCombinedInvoices() {
     // Add first invoice data to combined values
     combinedTotal += invoiceData.total_amount;
     combinedAdvanced += invoiceData.advanced_payment;
-    products.push(`${firstRow.querySelector('input[name="product_name"]').value} (${firstRow.querySelector('input[name="quantity"]').value})`);
+    products.push(
+        `${firstRow.querySelector('input[name="product_name"]').value} (${firstRow.querySelector('input[name="quantity"]').value})`
+    );
 
     // Process remaining selected invoices
     for (let i = 1; i < selected.length; i++) {
@@ -590,6 +604,7 @@ function printCombinedInvoices() {
     // Generate and print the combined invoice
     printCombinedInvoiceTemplate(combinedData);
 }
+
 function printCombinedInvoiceTemplate(invoiceData) {
     // Open a new blank window
     let printWindow = window.open('', '', 'width=800,height=600');
@@ -763,8 +778,8 @@ function showMessage(message, type = 'success') {
 
     // Set classes based on message type
     const bgColor = type === 'success' ? 'bg-green-500' :
-                   type === 'error' ? 'bg-red-500' :
-                   'bg-blue-500';
+        type === 'error' ? 'bg-red-500' :
+        'bg-blue-500';
 
     messageDiv.className = `${bgColor} text-white px-4 py-2 rounded shadow-lg mb-2 flex justify-between items-center`;
     messageDiv.innerHTML = `
@@ -793,7 +808,8 @@ function showErrorMessages(errors) {
     });
     html += '</ul>';
 
-    messageDiv.innerHTML = html + '<button onclick="this.parentElement.remove()" class="mt-2 text-white font-bold float-right">&times;</button>';
+    messageDiv.innerHTML = html +
+        '<button onclick="this.parentElement.remove()" class="mt-2 text-white font-bold float-right">&times;</button>';
 
     container.appendChild(messageDiv);
 
@@ -802,5 +818,4 @@ function showErrorMessages(errors) {
         messageDiv.remove();
     }, 8000);
 }
-
 </script>
