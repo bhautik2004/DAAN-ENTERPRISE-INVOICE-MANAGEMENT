@@ -1,109 +1,113 @@
 <?php
-include 'db.php'; // Database connection
+    include 'db.php'; // Database connection
 
-// Fetch products from the database
-$product_result = $conn->query("SELECT id, product_name, price FROM products");
+    // Fetch products from the database
+    $product_result = $conn->query("SELECT id, product_name, price FROM products");
 
-$current_user_name = $_SESSION['user'];
-$message = "";
+    $current_user_name = $_SESSION['user'];
+    $message           = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
-    // Customer details
-    $mobile = $_POST['mobile'];
-    $full_name = $_POST['full_name'];
-    $address1 = $_POST['address1'];
-    $address2 = $_POST['address2'];
-    $pincode = $_POST['pincode'];
-    $district = $_POST['district'];
-    $sub_district = $_POST['sub_district'];
-    $village = $_POST['village'];
-    $post_name = $_POST['post_name'];
-    $mobile2 = $_POST['mobile2'];
-    $barcode_number = $_POST['barcode_number'];
-    $employee_name = $_POST['employee_name'];
-    $advanced_payment = (float)$_POST['advanced_payment']; // Convert to float
-    $status = "Pending";
-    date_default_timezone_set('Asia/Kolkata');
-    $created_at = date("Y-m-d H:i:s");
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
+        // Customer details
+        $mobile           = $_POST['mobile'];
+        $full_name        = $_POST['full_name'];
+        $address1         = $_POST['address1'];
+        $address2         = $_POST['address2'];
+        $pincode          = $_POST['pincode'];
+        $district         = $_POST['district'];
+        $sub_district     = $_POST['sub_district'];
+        $village          = $_POST['village'];
+        $post_name        = $_POST['post_name'];
+        $mobile2          = $_POST['mobile2'];
+        $barcode_number   = $_POST['barcode_number'];
+        $employee_name    = $_POST['employee_name'];
+        $advanced_payment = (float) $_POST['advanced_payment']; // Convert to float
+        $status           = "Pending";
+        date_default_timezone_set('Asia/Kolkata');
+        $created_at = date("Y-m-d H:i:s");
 
-    // Start transaction
-    $conn->begin_transaction();
+        // Start transaction
+        $conn->begin_transaction();
 
-    try {
-        // Insert invoice (without product-related fields)
-        $query = "INSERT INTO invoices (mobile, full_name, address1, address2, pincode, district, 
-                  sub_district, village, post_name, mobile2, barcode_number, employee_name, 
-                  advanced_payment, status, created_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try {
+            // Insert invoice (without product-related fields)
+            // In your existing invoice creation code, modify the INSERT query:
+            $query = "INSERT INTO invoices (mobile, full_name, address1, address2, pincode, district,
+          sub_district, village, post_name, mobile2, barcode_number, employee_name,
+          customer_id, advanced_payment, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssssssssssdss", $mobile, $full_name, $address1, $address2, $pincode, 
-                         $district, $sub_district, $village, $post_name, $mobile2, $barcode_number, 
-                         $employee_name, $advanced_payment, $status, $created_at);
-
-        if (!$stmt->execute()) {
-            throw new Exception("Error creating invoice: " . $stmt->error);
-        }
-
-        $invoice_id = $conn->insert_id;
-        $stmt->close();
-
-        // Process each product in invoice_items
-        $total_amount = 0;
-        foreach ($_POST['product_id'] as $key => $product_id) {
-            $quantity = $_POST['quantity'][$key];
-            $discount = isset($_POST['discount'][$key]) ? (float)$_POST['discount'][$key] : 0;
-
-            // Get product price
-            $product_query = "SELECT price FROM products WHERE id = ?";
-            $stmt = $conn->prepare($product_query);
-            $stmt->bind_param("i", $product_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $product = $result->fetch_assoc();
-            $stmt->close();
-
-            if (!$product) {
-                throw new Exception("Invalid product selected: ID $product_id");
+            $stmt        = $conn->prepare($query);
+            $customer_id = $_POST['customer_id']; // Get from form
+            $stmt->bind_param("sssssssssssssdss", $mobile, $full_name, $address1, $address2, $pincode,
+                $district, $sub_district, $village, $post_name, $mobile2, $barcode_number,
+                $employee_name, $customer_id, $advanced_payment, $status, $created_at);
+            if (! $stmt->execute()) {
+                throw new Exception("Error creating invoice: " . $stmt->error);
             }
 
-            $price = $product['price'];
-            $item_total = ($price * $quantity) - $discount;
-            $total_amount += $item_total;
+            $invoice_id = $conn->insert_id;
+            $stmt->close();
 
-            // Insert invoice item
-            $item_query = "INSERT INTO invoice_items (invoice_id, product_id, quantity, price, discount)
+            // Process each product in invoice_items
+            $total_amount = 0;
+            foreach ($_POST['product_id'] as $key => $product_id) {
+                $quantity = $_POST['quantity'][$key];
+                $discount = isset($_POST['discount'][$key]) ? (float) $_POST['discount'][$key] : 0;
+
+                // Get product price
+                $product_query = "SELECT price FROM products WHERE id = ?";
+                $stmt          = $conn->prepare($product_query);
+                $stmt->bind_param("i", $product_id);
+                $stmt->execute();
+                $result  = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                $stmt->close();
+
+                if (! $product) {
+                    throw new Exception("Invalid product selected: ID $product_id");
+                }
+
+                $price      = $product['price'];
+                $item_total = ($price * $quantity) - $discount;
+                $total_amount += $item_total;
+
+                // Insert invoice item
+                $item_query = "INSERT INTO invoice_items (invoice_id, product_id, quantity, price, discount)
                            VALUES (?, ?, ?, ?, ?)";
-            $stmt = $conn->prepare($item_query);
-            $stmt->bind_param("iiidd", $invoice_id, $product_id, $quantity, $price, $discount);
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Error adding invoice item: " . $stmt->error);
+                $stmt = $conn->prepare($item_query);
+                $stmt->bind_param("iiidd", $invoice_id, $product_id, $quantity, $price, $discount);
+
+                if (! $stmt->execute()) {
+                    throw new Exception("Error adding invoice item: " . $stmt->error);
+                }
+                $stmt->close();
+            }
+
+            // Subtract advanced payment from total
+            $final_amount = $total_amount - $advanced_payment;
+            if ($final_amount < 0) {
+                $final_amount = 0;
+            }
+            // Prevent negative total
+
+            // Update invoice with total amount (excluding advanced payment)
+            $update_query = "UPDATE invoices SET total_amount = ? WHERE id = ?";
+            $stmt         = $conn->prepare($update_query);
+            $stmt->bind_param("di", $final_amount, $invoice_id);
+
+            if (! $stmt->execute()) {
+                throw new Exception("Error updating invoice total: " . $stmt->error);
             }
             $stmt->close();
+
+            $conn->commit();
+            $message = "Invoice #$invoice_id created successfully with barcode: $barcode_number";
+        } catch (Exception $e) {
+            $conn->rollback();
+            $message = "Error: " . $e->getMessage();
         }
-
-        // Subtract advanced payment from total
-        $final_amount = $total_amount - $advanced_payment;
-        if ($final_amount < 0) $final_amount = 0; // Prevent negative total
-
-        // Update invoice with total amount (excluding advanced payment)
-        $update_query = "UPDATE invoices SET total_amount = ? WHERE id = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("di", $final_amount, $invoice_id);
-
-        if (!$stmt->execute()) {
-            throw new Exception("Error updating invoice total: " . $stmt->error);
-        }
-        $stmt->close();
-
-        $conn->commit();
-        $message = "Invoice #$invoice_id created successfully with barcode: $barcode_number";
-    } catch (Exception $e) {
-        $conn->rollback();
-        $message = "Error: " . $e->getMessage();
     }
-}
 ?>
 
 <!DOCTYPE html>
@@ -383,7 +387,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
                     <div>
                         <label class="block text-sm font-semibold mb-1">Barcode Number</label>
                         <input type="text" name="barcode_number"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Customer ID</label>
+                        <input type="text" name="customer_id" id="customer_id"
+                            class="w-full p-2 border border-gray-300 rounded-md bg-gray-100" readonly required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Employee Name</label>
@@ -406,9 +416,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
                                     class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     required>
                                     <?php
-                                   // Run the query again if needed
-                                   $product_result = $conn->query("SELECT id, product_name, price FROM products");
-                               ?>
+                                        // Run the query again if needed
+                                        $product_result = $conn->query("SELECT id, product_name, price FROM products");
+                                    ?>
                                     <option value="">Select Product</option>
                                     <?php while ($row = $product_result->fetch_assoc()): ?>
                                     <option value="<?php echo $row['id']; ?>" data-price="<?php echo $row['price']; ?>">
@@ -417,7 +427,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
                                     <?php endwhile; ?>
                                 </select>
                             </div>
-                           
+
                             <div>
                                 <label class="block text-sm font-semibold mb-1">Quantity</label>
                                 <input type="number" name="quantity[]"
@@ -501,9 +511,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        fetchActiveDistributorCustomerId();
         // Add product row functionality
         const addProductBtn = document.getElementById('add-product');
         const productsContainer = document.getElementById('products-container');
+
 
         addProductBtn.addEventListener('click', function() {
             const productRow = document.querySelector('.product-row').cloneNode(true);
@@ -536,10 +548,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
         document.addEventListener('change', function(e) {
             if (e.target.matches(
                     'select[name="product_id[]"], input[name="quantity[]"], input[name="discount[]"]'
-                    )) {
+                )) {
                 calculateTotals();
             }
+
         });
+
+        function fetchActiveDistributorCustomerId() {
+            fetch('get_active_distributor.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.customer_id) {
+                        document.getElementById('customer_id').value = data.customer_id;
+                    }
+                })
+                .catch(error => console.error('Error fetching distributor:', error));
+        }
 
         function calculateTotals() {
             let subtotal = 0;

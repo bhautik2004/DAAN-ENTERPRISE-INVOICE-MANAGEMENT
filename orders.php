@@ -80,7 +80,7 @@
             $user = $_SESSION['user'] ?? null;
 
             // Base query
-            $sql         = "SELECT * FROM invoices";
+            $sql         = "SELECT * FROM invoices ";
             $conditions  = [];
             $paramTypes  = '';
             $paramValues = [];
@@ -92,13 +92,13 @@
             }
 
             if (! empty($search)) {
-                $conditions[] = "(full_name LIKE ? OR mobile LIKE ? OR barcode_number LIKE ?)";
-                $paramTypes .= 'sss';
+                $conditions[] = "(full_name LIKE ? OR mobile LIKE ? OR barcode_number LIKE ? OR customer_id LIKE ?)";
+                $paramTypes .= 'ssss'; // Added one more 's' for customer_id
                 $paramValues[] = "%$search%";
                 $paramValues[] = "%$search%";
                 $paramValues[] = "%$search%";
+                $paramValues[] = "%$search%"; // Added for customer_id
             }
-
             if (! empty($status_filter)) {
                 $conditions[] = "status = ?";
                 $paramTypes .= 's';
@@ -161,7 +161,7 @@
 
         <!-- Search Form -->
         <form method="GET" class="mb-4 flex">
-            <input type="text" name="search" placeholder="Search by Name, Mobile or Barcode..."
+            <input type="text" name="search" placeholder="Search by Name, Mobile, Barcode or Customer Id ..."
                 class="w-full p-2 ml-2 border border-gray-300 rounded-l-md"
                 value="<?php echo htmlspecialchars($search); ?>">
             <button type="submit" class="bg-[var(--primary-color)] text-white px-2 py-2 rounded-r-md">
@@ -179,13 +179,13 @@
 
                     <select name="status_filter" class="p-2 border border-gray-300 rounded-md">
                         <option value="">All Statuses</option>
-                        <option value="Pending"                                                <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
+                        <option value="Pending"                                                                                                                                              <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending
                         </option>
-                        <option value="Completed"                                                  <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
+                        <option value="Completed"                                                                                                                                                    <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="Canceled"                                                 <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
+                        <option value="Canceled"                                                                                                                                                 <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
                         </option>
-                        <option value="Returned"                                                 <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
+                        <option value="Returned"                                                                                                                                                 <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
                     </select>
 
@@ -208,7 +208,9 @@
                             <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
                             <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
                             <th class="p-2 border min-w-[120px] bg-gray-200">Barcode</th>
-                            <th class="p-2 border min-w-[200px] bg-gray-200">Address</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
                             <th class="p-2 border min-w-[80px] bg-gray-200">Pincode</th>
                             <th class="p-2 border min-w-[120px] bg-gray-200">District</th>
                             <th class="p-2 border min-w-[120px] bg-gray-200">Sub District</th>
@@ -224,32 +226,42 @@
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
                                 $items_sql = "SELECT ii.*, p.product_name, p.price,p.weight,p.sku
-		                                         FROM invoice_items ii
-		                                         JOIN products p ON ii.product_id = p.id
-		                                         WHERE ii.invoice_id = ?";
+				                                         FROM invoice_items ii
+				                                         JOIN products p ON ii.product_id = p.id
+				                                         WHERE ii.invoice_id = ?";
                                 $items_stmt = $conn->prepare($items_sql);
                                 $items_stmt->bind_param("i", $row['id']);
                                 $items_stmt->execute();
                                 $items_result  = $items_stmt->get_result();
                                 $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
                             ?>
-	                        <tr class="text-left bg-gray-50 hover:bg-gray-100">
-	                            <td class="p-2 border"><input type="checkbox" name="selected[]"
-	                                    value="<?php echo $row['id']; ?>"></td>
-	                            <td class="p-2 border text-center flex space-x-2">
-	                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
-	                                    class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
-	                                <?php if ($_SESSION['role'] == 'Admin'): ?>
-	                                <form method="POST" style="display:inline;">
-	                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-	                                    <button type="submit" name="delete_invoice"
-	                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
-	                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
-	                                </form>
-	                                <?php endif; ?>
+			                        <tr class="text-left bg-gray-50 hover:bg-gray-100">
+			                            <td class="p-2 border"><input type="checkbox" name="selected[]"
+			                                    value="<?php echo $row['id']; ?>"></td>
+			                            <td class="p-2 border text-center flex space-x-2">
+			                                <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
+			                                    class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
+			                                <?php if ($_SESSION['role'] == 'Admin'): ?>
+			                                <form method="POST" style="display:inline;">
+			                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+			                                    <button type="submit" name="delete_invoice"
+			                                        class="bg-red-500 text-white px-3 py-1 text-xs rounded"
+			                                        onclick="return confirm('Are you sure you want to delete this invoice?');">Delete</button>
+			                                </form>
+			                                <?php endif; ?>
 
 
                                 <?php
+                                    // Fetch distributor data for this customer
+                                    $distributor_data = [];
+                                    if (! empty($row['customer_id'])) {
+                                        $distributor_stmt = $conn->prepare("SELECT * FROM distributors WHERE customer_id = ?");
+                                        $distributor_stmt->bind_param("s", $row['customer_id']);
+                                        $distributor_stmt->execute();
+                                        $distributor_result = $distributor_stmt->get_result();
+                                        $distributor_data   = $distributor_result->fetch_assoc();
+                                    }
+                                    
                                     $row['invoice_items'] = $invoice_items; // Add product info into the row before sending to JS
                                 ?>
                                 <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
@@ -261,7 +273,9 @@
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['full_name']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['barcode_number']); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['customer_id'] ?? ''); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['address1']); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['address2']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['pincode']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['district']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['sub_district']); ?></td>
@@ -321,7 +335,7 @@
 
             for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded                                                                                               <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                                                                                                                                                             <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -345,8 +359,8 @@
 
         <!-- Page Info -->
         <div class="text-center text-sm text-gray-600 mt-2">
-            Page                 <?php echo $page; ?> of<?php echo $pages; ?> |
-            Showing                    <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
+            Page                                                 <?php echo $page; ?> of<?php echo $pages; ?> |
+            Showing                                                          <?php echo($start + 1); ?>-<?php echo min($start + $limit, $total); ?> of<?php echo $total; ?>
             records
         </div>
 

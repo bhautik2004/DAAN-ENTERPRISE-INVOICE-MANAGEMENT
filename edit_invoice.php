@@ -220,6 +220,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer Id</label>
+                    <input type="text" name="barcode_number"
+                        value="<?php echo htmlspecialchars($invoice['customer_id']); ?>"
+                        class="w-full p-2 border border-gray-300 rounded-md" required disabled>
+                </div>
+
+                <div class="form-group">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Barcode Number*</label>
                     <input type="text" name="barcode_number"
                         value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>"
