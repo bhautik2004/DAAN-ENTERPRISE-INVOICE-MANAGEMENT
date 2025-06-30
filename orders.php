@@ -389,33 +389,9 @@
         });
     });
 
-    // Print invoice
-    function printInvoice(invoiceId) {
-        window.open('print_invoice.php?id=' + invoiceId, '_blank');
-    }
+    
 
-    // Print selected invoices
-    function printSelectedInvoices() {
-        const selected = Array.from(document.querySelectorAll('input[name="selected[]"]:checked'))
-            .map(checkbox => checkbox.value);
-        if (selected.length === 0) {
-            showMessage('Please select at least one invoice', 'error');
-            return;
-        }
-        window.open('print_invoice.php?ids=' + selected.join(','), '_blank');
-    }
-
-    // Print combined invoices
-    function printCombinedInvoices() {
-        const selected = Array.from(document.querySelectorAll('input[name="selected[]"]:checked'))
-            .map(checkbox => checkbox.value);
-        if (selected.length === 0) {
-            showMessage('Please select at least one invoice', 'error');
-            return;
-        }
-        window.open('print_combined_invoices.php?ids=' + selected.join(','), '_blank');
-    }
-
+   
     // Show message function
     function showMessage(message, type = 'info') {
         const container = document.getElementById('message-container');

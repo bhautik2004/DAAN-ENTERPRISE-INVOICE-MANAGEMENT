@@ -51,12 +51,6 @@ async function checkPincode() {
 }
 
 
-// <!-- Column Toggle Script -->
-// function enableEdit(id) {
-//     document.querySelectorAll('#row_' + id + ' .editable').forEach(el => el.disabled = false);
-//     document.querySelector('#row_' + id + ' .save-btn').classList.remove('hidden');
-// }
-
 
 
 function formatDate(dateString) {
@@ -76,6 +70,29 @@ function formatDate(dateString) {
 }
 
 function printInvoice(invoiceData) {
+    fetch('get_distributor.php')
+        .then(res => res.json())
+        .then(distributor => {
+            invoiceData.distributor = distributor; // Add distributor into invoiceData
+            continuePrint(invoiceData); // Now call your real print logic
+        })
+        .catch(err => {
+            console.error('Failed to fetch distributor:', err);
+            alert('Failed to load distributor info.');
+        });
+}
+
+function continuePrint(invoiceData) {
+
+    const distributor = invoiceData.distributor || {};
+    const {
+        distributer_name = '',
+        distributer_address = '',
+        mobile: dist_mobile = '',
+        email: dist_email = '',
+        note: dist_note = ''
+    } = distributor;
+
     if (typeof invoiceData === 'string') {
         try {
             invoiceData = JSON.parse(invoiceData);
@@ -84,7 +101,7 @@ function printInvoice(invoiceData) {
             return;
         }
     }
-
+    
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
             sub_district = '', post_name = '', mobile = '', mobile2 = '',
@@ -315,19 +332,17 @@ if (invoice_items.length > 4 && invoice_items.length <= 6) {
         <div class="section">
             <table class="footer-table">
                 <tr><td><b>Pickup and Return Address:</b></td></tr>
-                <tr><td><strong>DAAN ENTERPRISE</strong></td></tr>
-                <tr><td>DAAN ENTERPRISE 220-SCOND FLOOR-VISHAL SUPREM.. OPP. TORRENT POWER S P. RING ROAD, NIKOL-AHMEDABAD AHMEDABAD, Gujarat</td></tr>
-                <tr><td>India : 7693478838 &nbsp; GST No, 24FJQFP2348G1ZT</td></tr>
+                <tr><td><strong>${distributer_name}</strong></td></tr>
+                <tr><td>${distributer_address}</td></tr>
                 <tr><td></td></tr>
                 <tr><td class="bold">For any query please contact:</td></tr>
-                <tr><td><b>Mobile:</b> 7693478838 <b>Email:</b> daanpost5@gmail.com</td></tr>
+                <tr><td><b>Mobile:</b> ${dist_mobile} <b>Email:</b> ${dist_email}</td></tr>
             </table>
         </div>
 
         <div class="section small">
-            This is computer generated document hence does not required signature.<br>
-            <b>Note : </b>Self declaration under section 12(2)(b) of the Dehli Jurisdiction.<br>
-            Goods once sold will only be taken back or exchanged as per the store's exchange/return policy.
+            <b>Note : </b>
+            ${dist_note}
         </div>
     </div>
 </body>
@@ -336,149 +351,6 @@ if (invoice_items.length > 4 && invoice_items.length <= 6) {
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-}
-
-function printSelectedInvoices() {
-    // Get all selected checkboxes
-    const selected = document.querySelectorAll('input[name="selected[]"]:checked');
-
-    // Check if at least one invoice is selected
-    if (selected.length === 0) {
-        alert('Please select at least one invoice to print.');
-        return;
-    }
-
-    // Array to hold all invoice HTMLs
-    let allInvoicesHTML = '';
-
-    // Loop through selected invoices and collect their HTML
-    selected.forEach(checkbox => {
-        const row = checkbox.closest('tr');
-        const invoiceData = {
-            mobile: row.querySelector('input[name="mobile"]').value,
-            full_name: row.querySelector('input[name="full_name"]').value,
-            address1: row.querySelector('input[name="address1"]').value,
-            address2: row.querySelector('input[name="address2"]').value,
-            pincode: row.querySelector('input[name="pincode"]').value,
-            district: row.querySelector('input[name="district"]').value,
-            sub_district: row.querySelector('input[name="sub_district"]').value,
-            village: row.querySelector('input[name="village"]').value,
-            post_name: row.querySelector('input[name="post_name"]').value,
-            mobile2: row.querySelector('input[name="mobile2"]').value,
-            product_name: row.querySelector('input[name="product_name"]').value,
-            quantity: row.querySelector('input[name="quantity"]').value,
-            employee_name: row.querySelector('input[name="employee_name"]').value,
-            total_amount: row.querySelector('input[name="total_amount"]').value,
-            advanced_payment: row.querySelector('input[name="advanced_payment"]').value,
-            created_at: row.querySelector('input[name="created_at"]').value,
-            status: row.querySelector('select[name="status"]').value
-        };
-
-        // Generate invoice HTML for this invoice
-        allInvoicesHTML += generateInvoiceHTML(invoiceData);
-    });
-
-    // Open a new window and print all invoices together
-    printAllInvoices(allInvoicesHTML);
-}
-
-function generateInvoiceHTML(invoiceData) {
-    let addressHTML = `
-        <tr>
-            <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                ${invoiceData.address1}
-            </td>
-        </tr>`;
-
-    if (invoiceData.address2) {
-        addressHTML += `
-        <tr>
-           <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                ${invoiceData.address2}
-            </td>
-        </tr>`;
-    }
-
-    return `
-      <div class="invoice-container">
-            <table>
-                <tr class="compact-row">
-                    <td align="center" colspan="3" style="font-family: Bahnschrift; font-weight: 700; font-size: 16px;">
-                        BOOK UNDER SPEED POST COD BNPL SERVICE
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" style="font-family: Bahnschrift; font-size: 14px;">
-                        CUSTOMER NO
-                    </td>
-                    <td align="center" rowspan="2" style="font-family: Bahnschrift; font-size: 30px;">
-                        COD
-                    </td>
-                    <td align="center" rowspan="2" style="font-size: 30px; font-family: Palatino Linotype;">
-                        ${invoiceData.total_amount - invoiceData.advanced_payment}/-
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" style="background-color: black; color:white; font-family: Bahnschrift;">
-                        56759
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" colspan="3" style="font-family: Calibri; font-weight: 800; font-size: 38px;">
-                        મુ - ${invoiceData.village}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        ${invoiceData.full_name}
-                    </td>
-                </tr>
-                ${addressHTML}
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        પોસ્ટ - ${invoiceData.post_name}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        તાલુકો - ${invoiceData.sub_district}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        જીલ્લો - ${invoiceData.district}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        પિન - ${invoiceData.pincode}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="font-family: calibri; font-size: 20px; padding: 2px; border:none;">
-                        મો - ${invoiceData.mobile} ${invoiceData.mobile2 ? '/ ' + invoiceData.mobile2 : ''}
-                    </td>
-                </tr>
-                <tr>
-                   <td colspan="3" class="small-medium" style="padding: 3px;">
-    🚗 SHIPPED BY- PRS HOMOEO PHARMACY, 406, SANKALP ICON, OPP PARIKH HOSPITAL, NEW NIKOL, AHMEDABAD, 382350 <br>
-    📞 MO-79849 30709
-</td>
-
-                </tr>
-                <tr>
-                    <td colspan="3" class="small-text" style="padding: 3px;">
-                        ⚠️ ટપાલી ને નોંધ - ખાસ ફોન કરીને કુરિયર આપવા જવું. જો ડેટા બતાવતો ના હોય તો કાયદા પ્રમાણે 2-3 દિવસ માટે કુરિયર પોસ્ટ ઓફિસ મા જ રાખવું અને પછી ફરી વાર ડિલિવરી આપવાની રહેશે. જો કોઈ ખોટા કારણ થી કુરિયર રિટર્ન થસે તો કાયદેસર ની કાર્યવાહી કરવામાં આવશે.
-                    </td>
-                </tr>
-                <tr class="compact-row">
-                    <td align="center" colspan="3" style="font-family: Bahnschrift; font-size: 14px;">
-                        ${invoiceData.product_name} - ${invoiceData.quantity} / ${invoiceData.employee_name}
-                    </td>
-                </tr>
-            </table>
-        </div>
-    `;
 }
 
 
