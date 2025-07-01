@@ -71,6 +71,8 @@
             </li>
             <?php } ?>
 
+            
+
             <li class="bg-red-500 hover:bg-red-600 rounded-md cursor-pointer">
                 <a href="logout.php" class="flex items-center space-x-2 p-2 w-full block">
                     <i class="fas fa-sign-out-alt"></i> <span>Logout</span>

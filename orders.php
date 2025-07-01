@@ -308,8 +308,6 @@
         <div class="mt-4 flex justify-between w-full">
             <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded"
                 onclick="printSelectedInvoices()">Print Selected</button>
-            <button onclick="printCombinedInvoices()"
-                class="bg-[var(--primary-color)] text-white px-4 py-2 rounded mr-8">Print Combined Invoices</button>
         </div>
 
         <!-- Pagination -->

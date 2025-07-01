@@ -388,7 +388,7 @@
                         <label class="block text-sm font-semibold mb-1">Barcode Number</label>
                         <input type="text" name="barcode_number"
                             class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            >
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Customer ID</label>
