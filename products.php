@@ -51,7 +51,7 @@ if ($_SESSION['role'] != "Admin") {
             <table class="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr class="bg-gray-200">
-                        <th class="p-2 border">ID</th>
+                        <th class="p-2 border">Product ID</th>
                         <th class="p-2 border">Product Name</th>
                         <th class="p-2 border">SKU</th>
                         <th class="p-2 border">Price</th>
