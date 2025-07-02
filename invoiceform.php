@@ -31,11 +31,10 @@
 
         try {
             // Insert invoice (without product-related fields)
-            // In your existing invoice creation code, modify the INSERT query:
             $query = "INSERT INTO invoices (mobile, full_name, address1, address2, pincode, district,
-          sub_district, village, post_name, mobile2, barcode_number, employee_name,
-          customer_id, advanced_payment, status, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+              sub_district, village, post_name, mobile2, barcode_number, employee_name,
+              customer_id, advanced_payment, status, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt        = $conn->prepare($query);
             $customer_id = $_POST['customer_id']; // Get from form
@@ -72,11 +71,11 @@
                 $item_total = ($price * $quantity) - $discount;
                 $total_amount += $item_total;
 
-                // Insert invoice item
-                $item_query = "INSERT INTO invoice_items (invoice_id, product_id, quantity, price, discount)
-                           VALUES (?, ?, ?, ?, ?)";
+                // Insert invoice item without price
+                $item_query = "INSERT INTO invoice_items (invoice_id, product_id, quantity, discount)
+                           VALUES (?, ?, ?, ?)";
                 $stmt = $conn->prepare($item_query);
-                $stmt->bind_param("iiidd", $invoice_id, $product_id, $quantity, $price, $discount);
+                $stmt->bind_param("iiid", $invoice_id, $product_id, $quantity, $discount);
 
                 if (! $stmt->execute()) {
                     throw new Exception("Error adding invoice item: " . $stmt->error);

@@ -60,15 +60,13 @@
             $conn->begin_transaction();
 
             try {
-
                 // Update invoice header
-                // In your PHP code where you prepare the update statement:
                 $updateSql = "UPDATE invoices SET
-    full_name = ?, mobile = ?, address1 = ?, address2 = ?, pincode = ?,
-    district = ?, sub_district = ?, village = ?, post_name = ?, mobile2 = ?,
-    barcode_number = ?, employee_name = ?, advanced_payment = ?, status = ?,
-    total_amount = ?
-    WHERE id = ?";
+                    full_name = ?, mobile = ?, address1 = ?, address2 = ?, pincode = ?,
+                    district = ?, sub_district = ?, village = ?, post_name = ?, mobile2 = ?,
+                    barcode_number = ?, employee_name = ?, advanced_payment = ?, status = ?,
+                    total_amount = ?
+                    WHERE id = ?";
 
                 $stmt = $conn->prepare($updateSql);
                 $stmt->bind_param("ssssssssssssdsdi",
@@ -97,7 +95,6 @@
                 $item_ids    = $_POST['item_id'] ?? [];
                 $product_ids = $_POST['product_id'] ?? [];
                 $quantities  = $_POST['quantity'] ?? [];
-                $prices      = $_POST['price'] ?? [];
                 $discounts   = $_POST['discount'] ?? [];
 
                 // First delete items that were removed
@@ -121,29 +118,38 @@
                     $item_id    = $item_ids[$i] ?? null;
                     $product_id = $product_ids[$i] ?? null;
                     $quantity   = $quantities[$i] ?? 0;
-                    $price      = $prices[$i] ?? 0;
                     $discount   = $discounts[$i] ?? 0;
+                    
+                    // Get product price from products table
+                    $price_sql = "SELECT price FROM products WHERE id = ?";
+                    $price_stmt = $conn->prepare($price_sql);
+                    $price_stmt->bind_param("i", $product_id);
+                    $price_stmt->execute();
+                    $price_result = $price_stmt->get_result();
+                    $product = $price_result->fetch_assoc();
+                    $price = $product['price'];
+                    
                     $row_total  = ($price * $quantity) - $discount;
                     $total_amount += $row_total;
 
-                    if (empty($product_id) || empty($quantity) || empty($price)) {
+                    if (empty($product_id) || empty($quantity)) {
                         continue;
                     }
 
                     if (! empty($item_id) && is_numeric($item_id)) {
                         // Update existing item
                         $updateItem = "UPDATE invoice_items SET
-                        product_id = ?, quantity = ?, price = ?, discount = ?
-                        WHERE id = ?";
+                            product_id = ?, quantity = ?, discount = ?
+                            WHERE id = ?";
                         $stmt = $conn->prepare($updateItem);
-                        $stmt->bind_param("iiddi", $product_id, $quantity, $price, $discount, $item_id);
+                        $stmt->bind_param("iidi", $product_id, $quantity, $discount, $item_id);
                     } else {
                         // Insert new item
                         $insertItem = "INSERT INTO invoice_items
-                        (invoice_id, product_id, quantity, price, discount)
-                        VALUES (?, ?, ?, ?, ?)";
+                            (invoice_id, product_id, quantity, discount)
+                            VALUES (?, ?, ?, ?)";
                         $stmt = $conn->prepare($insertItem);
-                        $stmt->bind_param("iiidd", $invoice_id, $product_id, $quantity, $price, $discount);
+                        $stmt->bind_param("iiid", $invoice_id, $product_id, $quantity, $discount);
                     }
 
                     if (! $stmt->execute()) {
@@ -230,30 +236,28 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Barcode Number*</label>
                     <input type="text" name="barcode_number"
                         value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>"
-                        class="w-full p-2 border border-gray-300 rounded-md" required>
+                        class="w-full p-2 border border-gray-300 rounded-md" >
                 </div>
 
                 <div class="form-group">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="w-full p-2 border border-gray-300 rounded-md">
-                        <option value="Pending"                                                <?php echo $invoice['status'] === 'Pending' ? 'selected' : ''; ?>>
+                        <option value="Pending" <?php echo $invoice['status'] === 'Pending' ? 'selected' : ''; ?>>
                             Pending</option>
-                        <option value="Completed"                                                  <?php echo $invoice['status'] === 'Completed' ? 'selected' : ''; ?>>
+                        <option value="Completed" <?php echo $invoice['status'] === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="Canceled"                                                 <?php echo $invoice['status'] === 'Canceled' ? 'selected' : ''; ?>>
+                        <option value="Canceled" <?php echo $invoice['status'] === 'Canceled' ? 'selected' : ''; ?>>
                             Canceled</option>
-                        <option value="Returned"                                                 <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
+                        <option value="Returned" <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
                             Returned</option>
                     </select>
                 </div>
-
 
                 <div class="form-group">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Employee Name</label>
                     <input type="text" name="employee_name"
                         value="<?php echo htmlspecialchars($invoice['employee_name']); ?>"
                         class="w-full p-2 border border-gray-300 rounded-md" readonly>
-                    <!-- Changed from disabled to readonly -->
                 </div>
 
                 <div class="form-group">
@@ -354,15 +358,15 @@
                                         class="w-full p-2 border rounded quantity-input" min="1" required>
                                 </td>
                                 <td class="py-2 px-4 border">
-                                    <input type="number" name="price[]" value="<?php echo $item['price']; ?>"
-                                        class="w-full p-2 border rounded price-input" step="0.01" min="0" required>
+                                    <input type="number" name="price_display[]" value="<?php echo $item['product_price']; ?>"
+                                        class="w-full p-2 border rounded price-display" step="0.01" min="0" readonly>
                                 </td>
                                 <td class="py-2 px-4 border">
                                     <input type="number" name="discount[]" value="<?php echo $item['discount']; ?>"
                                         class="w-full p-2 border rounded discount-input" step="0.01" min="0">
                                 </td>
                                 <td class="py-2 px-4 border row-total">
-                                    <?php echo number_format(($item['price'] * $item['quantity']) - $item['discount'], 2); ?>
+                                    <?php echo number_format(($item['product_price'] * $item['quantity']) - $item['discount'], 2); ?>
                                 </td>
                                 <td class="py-2 px-4 border">
                                     <button type="button" class="remove-item-btn text-red-500 hover:text-red-700">
@@ -383,7 +387,6 @@
             </div>
 
             <!-- Totals Section -->
-            <!-- In the Totals Section (around line 350) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-gray-100 p-4 rounded-md">
                     <h4 class="font-semibold text-gray-800 mb-2">Invoice Summary</h4>
@@ -446,8 +449,8 @@
                         class="w-full p-2 border rounded quantity-input" min="1" required>
                 </td>
                 <td class="py-2 px-4 border">
-                    <input type="number" name="price[]" value="0"
-                        class="w-full p-2 border rounded price-input" step="0.01" min="0" required>
+                    <input type="number" name="price_display[]" value="0"
+                        class="w-full p-2 border rounded price-display" step="0.01" min="0" readonly>
                 </td>
                 <td class="py-2 px-4 border">
                     <input type="number" name="discount[]" value="0"
@@ -483,14 +486,13 @@
         row.querySelector('.product-select').addEventListener('change', function() {
             const price = this.options[this.selectedIndex]?.dataset.price;
             if (price) {
-                row.querySelector('.price-input').value = price;
+                row.querySelector('.price-display').value = price;
             }
             calculateRowTotal(row);
         });
 
-        // Quantity, price, discount inputs
+        // Quantity, discount inputs
         row.querySelector('.quantity-input').addEventListener('input', () => calculateRowTotal(row));
-        row.querySelector('.price-input').addEventListener('input', () => calculateRowTotal(row));
         row.querySelector('.discount-input').addEventListener('input', () => calculateRowTotal(row));
 
         // Remove button
@@ -504,7 +506,7 @@
 
     function calculateRowTotal(row) {
         const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const price = parseFloat(row.querySelector('.price-input').value) || 0;
+        const price = parseFloat(row.querySelector('.price-display').value) || 0;
         const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
 
         const rowTotal = (price * quantity) - discount;
@@ -518,7 +520,7 @@
 
         document.querySelectorAll('.item-row').forEach(row => {
             const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            const price = parseFloat(row.querySelector('.price-display').value) || 0;
             const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
 
             const rowTotal = (price * quantity) - discount;
@@ -535,7 +537,7 @@
         document.getElementById('balance-display').textContent = balance.toFixed(2);
 
         // Update the hidden field that will be submitted
-        document.getElementById('total-amount').value = subtotal.toFixed(2); // This is what gets saved to DB
+        document.getElementById('total-amount').value = subtotal.toFixed(2);
     }
     </script>
 
