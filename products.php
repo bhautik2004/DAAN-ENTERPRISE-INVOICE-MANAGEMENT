@@ -1,42 +1,42 @@
 <?php include 'header.php'; ?>
 <?php include 'head.php'; ?>
 <?php
-if ($_SESSION['role'] != "Admin") {
-    header("Location: index.php");
-    exit();
-}
+    if ($_SESSION['role'] != "Admin") {
+        header("Location: index.php");
+        exit();
+    }
 
 ?>
+
 <body class="bg-gray-100 flex">
     <?php include 'sidebar.php'; ?>
     <main class="flex-1 ml-64 p-8">
         <h2 class="text-2xl font-bold text-[var(--primary-color)] mb-4 text-center">Product List</h2>
 
         <?php
-        include 'db.php';
+            include 'db.php';
 
-        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-        $limit = 8; 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $offset = ($page - 1) * $limit;
+            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $limit  = 8;
+            $page   = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+            $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT id, product_name, sku, price, weight FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
-        $stmt = $conn->prepare($sql);
-        $searchTerm = "%$search%";
-        $limitInt = (int)$limit;  // Convert to int and store in a variable
-        $offsetInt = (int)$offset; // Convert to int and store in a variable
-        $stmt->bind_param("sii", $searchTerm, $limitInt, $offsetInt);  // Use the variables
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
+            $sql        = "SELECT id, product_name, sku, price, weight FROM products WHERE product_name LIKE ? LIMIT ? OFFSET ?";
+            $stmt       = $conn->prepare($sql);
+            $searchTerm = "%$search%";
+            $limitInt   = (int) $limit;                                   // Convert to int and store in a variable
+            $offsetInt  = (int) $offset;                                  // Convert to int and store in a variable
+            $stmt->bind_param("sii", $searchTerm, $limitInt, $offsetInt); // Use the variables
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-        $countQuery = "SELECT COUNT(id) AS total FROM products WHERE product_name LIKE ?";
-        $countStmt = $conn->prepare($countQuery);
-        $countStmt->bind_param("s", $searchTerm);
-        $countStmt->execute();
-        $countResult = $countStmt->get_result();
-        $totalRecords = $countResult->fetch_assoc()['total'];
-        $totalPages = ceil($totalRecords / $limit);
+            $countQuery = "SELECT COUNT(id) AS total FROM products WHERE product_name LIKE ?";
+            $countStmt  = $conn->prepare($countQuery);
+            $countStmt->bind_param("s", $searchTerm);
+            $countStmt->execute();
+            $countResult  = $countStmt->get_result();
+            $totalRecords = $countResult->fetch_assoc()['total'];
+            $totalPages   = ceil($totalRecords / $limit);
         ?>
 
         <form method="GET" class="mb-4 flex">
@@ -46,6 +46,11 @@ if ($_SESSION['role'] != "Admin") {
                 Search
             </button>
         </form>
+        <button class="bg-green-700 text-white mt-5 mb-5 rounded-md cursor-pointer">
+            <a href="addproduct.php" class="flex items-center space-x-2 p-2 w-full block">
+                <i class="fas fa-plus-circle"></i> <span>Add Product</span>
+            </a>
+        </button>
 
         <div class="overflow-x-auto bg-white p-4 rounded-md shadow-md">
             <table class="w-full border-collapse border border-gray-300">
@@ -60,7 +65,7 @@ if ($_SESSION['role'] != "Admin") {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = $result->fetch_assoc()) : ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
                     <tr class="text-center" id="row-<?php echo $row['id']; ?>">
                         <td class="p-2 border"> <?php echo $row['id']; ?> </td>
                         <td class="p-2 border">
@@ -78,12 +83,12 @@ if ($_SESSION['role'] != "Admin") {
                                 class="w-full p-1 border border-gray-300 hidden">
                         </td>
                         <td class="p-2 border">
-                            <span id="price-display-<?php echo $row['id']; ?>"> <?php echo $row['price']; ?> </span>
+                            <span id="price-display-<?php echo $row['id']; ?>"><?php echo $row['price']; ?> </span>
                             <input type="number" id="price-edit-<?php echo $row['id']; ?>"
                                 value="<?php echo $row['price']; ?>" class="w-full p-1 border border-gray-300 hidden">
                         </td>
                         <td class="p-2 border">
-                            <span id="weight-display-<?php echo $row['id']; ?>"> <?php echo $row['weight']; ?> </span>
+                            <span id="weight-display-<?php echo $row['id']; ?>"><?php echo $row['weight']; ?> </span>
                             <input type="text" id="weight-edit-<?php echo $row['id']; ?>"
                                 value="<?php echo $row['weight']; ?>" class="w-full p-1 border border-gray-300 hidden">
                         </td>
@@ -107,20 +112,20 @@ if ($_SESSION['role'] != "Admin") {
         <!-- Pagination -->
         <div class="mt-4 flex justify-center space-x-2">
             <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>" 
-                   class="px-4 py-2 bg-gray-300 rounded">Previous</a>
+            <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>"
+                class="px-4 py-2 bg-gray-300 rounded">Previous</a>
             <?php endif; ?>
 
             <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>" 
-                   class="px-4 py-2 <?php echo ($i == $page) ? 'bg-blue-500 text-white' : 'bg-gray-300'; ?> rounded">
-                    <?php echo $i; ?>
-                </a>
+            <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"
+                class="px-4 py-2                                    <?php echo($i == $page) ? 'bg-blue-500 text-white' : 'bg-gray-300'; ?> rounded">
+                <?php echo $i; ?>
+            </a>
             <?php endfor; ?>
 
             <?php if ($page < $totalPages): ?>
-                <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>" 
-                   class="px-4 py-2 bg-gray-300 rounded">Next</a>
+            <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>"
+                class="px-4 py-2 bg-gray-300 rounded">Next</a>
             <?php endif; ?>
         </div>
 
@@ -185,4 +190,5 @@ if ($_SESSION['role'] != "Admin") {
         </script>
     </main>
 </body>
+
 </html>

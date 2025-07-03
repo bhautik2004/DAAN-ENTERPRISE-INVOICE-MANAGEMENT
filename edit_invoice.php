@@ -45,14 +45,6 @@
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors = [];
 
-        // Validate inputs
-        if (empty($_POST['full_name'])) {
-            $errors[] = "Full Name is required.";
-        }
-        if (empty($_POST['barcode_number'])) {
-            $errors[] = "Barcode Number is required.";
-        }
-
         if (! empty($errors)) {
             $_SESSION['errors'] = $errors;
         } else {

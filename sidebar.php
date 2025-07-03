@@ -29,23 +29,8 @@
                 </a>
             </li>
             <li class="hover:bg-gray-700 rounded-md cursor-pointer">
-                <a href="addproduct.php" class="flex items-center space-x-2 p-2 w-full block">
-                    <i class="fas fa-plus-circle"></i> <span>Add Product</span>
-                </a>
-            </li>
-            <li class="hover:bg-gray-700 rounded-md cursor-pointer">
                 <a href="distributers.php" class="flex items-center space-x-2 p-2 w-full block">
                     <i class="fas fa-truck"></i> <span>Distributors</span>
-                </a>
-            </li>
-            <li class="hover:bg-gray-700 rounded-md cursor-pointer">
-                <a href="adddistributer.php" class="flex items-center space-x-2 p-2 w-full block">
-                    <i class="fas fa-plus-circle"></i> <span>Add Distributor</span>
-                </a>
-            </li>
-            <li class="hover:bg-gray-700 rounded-md cursor-pointer">
-                <a href="add_employee.php" class="flex items-center space-x-2 p-2 w-full block">
-                    <i class="fas fa-user"></i> <span>Add Employee</span>
                 </a>
             </li>
             <li class="hover:bg-gray-700 rounded-md cursor-pointer">

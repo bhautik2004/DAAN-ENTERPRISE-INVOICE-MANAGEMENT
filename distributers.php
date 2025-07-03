@@ -38,15 +38,15 @@ if ($_SESSION['role'] != "Admin") {
             <table class="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr class="bg-gray-200">
-                        <th class="p-2 border">ID</th>
-                        <th class="p-2 border">Customer ID</th>
-                        <th class="p-2 border">Name</th>
-                        <th class="p-2 border">Address</th>
-                        <th class="p-2 border">Mobile</th>
-                        <th class="p-2 border">Email</th>
-                        <th class="p-2 border">Note</th>
-                        <th class="p-2 border">Status</th>
-                        <th class="p-2 border">Actions</th>
+                        <th class="p-2 border ">ID</th>
+                        <th class="p-2 border min-w-[150px]">Customer ID</th>
+                        <th class="p-2 border min-w-[200px]">Name</th>
+                        <th class="p-2 border min-w-[200px]">Address</th>
+                        <th class="p-2 border min-w-[150px]">Mobile</th>
+                        <th class="p-2 border min-w-[200px]">Email</th>
+                        <th class="p-2 border min-w-[250px]">Note</th>
+                        <th class="p-2 border min-w-[150px]">Status</th>
+                        <th class="p-2 border min-w-[150px]">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -124,6 +124,11 @@ if ($_SESSION['role'] != "Admin") {
                 </tbody>
             </table>
         </div>
+         <button class="bg-green-700 text-white mt-5 rounded-md cursor-pointer">
+                <a href="adddistributer.php" class="flex items-center space-x-2 p-2 w-full block">
+                    <i class="fas fa-plus-circle"></i> <span>Add Distributor</span>
+                </a>
+            </button>
 
         <script>
         function enableEdit(id) {

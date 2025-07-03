@@ -205,6 +205,7 @@
                             <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
                             <th class="p-2 border min-w-[150px] text-center bg-gray-200">Actions</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Status</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
                             <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
                             <th class="p-2 border min-w-[120px] bg-gray-200">Barcode</th>
@@ -264,13 +265,9 @@
                                 <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
                                     onclick='printInvoice(<?php echo json_encode($row); ?>)'>Print</button>
                                 <?php endif; ?>
-
-
-
-
-
                             </td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['status']); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['id']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['full_name']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['barcode_number']); ?></td>
@@ -311,7 +308,7 @@
                 onclick="printSelectedInvoices()">Print Selected</button>
 
             <button type="button" class="bg-green-600 text-white px-4 py-2 rounded"
-                onclick="printMahavirCourierInvoices()">Mahavir Courier Print</button>
+                onclick="printMahavirCourierInvoices()">Other Courier Print</button>
         </div>
 
         <!-- Pagination -->

@@ -432,7 +432,7 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
             <div style="text-transform: uppercase; font-size: 15px;">${full_name}</div></b>
             <div style="font-size: 15px;">${address1}${address2 ? ', ' + address2 : ''}</div>
             <div style="font-size: 15px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
-            <div class="bold">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+            <div class="bold" style="font-size: 15px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
         </div>
 
         <div class="section">
@@ -468,11 +468,9 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
         <div class="section">
             <table class="footer-table">
                 <tr><td><b>Pickup and Return Address:</b></td></tr>
-                <tr><td><strong>${distributer_name}</strong></td></tr>
+                <tr><td><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
                 <tr><td>${distributer_address}</td></tr>
                 <tr><td></td></tr>
-                <tr><td class="bold">For any query please contact:</td></tr>
-                <tr><td><b>Mobile:</b> ${dist_mobile} <b>Email:</b> ${dist_email}</td></tr>
             </table>
         </div>
 
@@ -676,7 +674,7 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
             <div style="text-transform: uppercase; font-size: 15px;">${full_name}</div></b>
             <div style="font-size: 15px;">${address1}${address2 ? ', ' + address2 : ''}</div>
             <div style="font-size: 15px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
-            <div class="bold">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+            <div class="bold" style="font-size: 15px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
         </div>
 
         <div class="section">
@@ -685,10 +683,7 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
                     <td><strong>Order date :</strong> ${orderDate}</td>
                     <td><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
-                <tr>
-                    <td><strong>Customer ID :</strong> ${customer_id}</td>
-                    <td><strong>Invoice No :</strong> ${id}</td>
-                </tr>
+               
             </table>
         </div>
 
@@ -716,11 +711,9 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
         <div class="section">
             <table class="footer-table">
                 <tr><td><b>Pickup and Return Address:</b></td></tr>
-                <tr><td><strong>${distributer_name}</strong></td></tr>
+                <tr><td><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
                 <tr><td>${distributer_address}</td></tr>
                 <tr><td></td></tr>
-                <tr><td class="bold">For any query please contact:</td></tr>
-                <tr><td><b>Mobile:</b> ${dist_mobile} <b>Email:</b> ${dist_email}</td></tr>
             </table>
         </div>
 
