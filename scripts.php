@@ -445,6 +445,12 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
         </div>
 
         <div class="section items-container">
+
+        
+
+        <div class="bold">
+            Invoice ID : ${id}
+        </div>
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
@@ -688,6 +694,7 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
         </div>
 
         <div class="section items-container">
+            
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
@@ -706,6 +713,9 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="bold">
+            INVOICE ID : ${id}
         </div>
 
         <div class="section">
