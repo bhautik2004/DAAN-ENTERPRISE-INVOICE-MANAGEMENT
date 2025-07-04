@@ -71,7 +71,7 @@ function formatDate(dateString) {
 
 
 // For single invoice printing
-function printInvoice(invoiceData) {
+function printInvoice(invoiceData, isMultiUp = false) {
     fetch('get_distributor.php')
         .then(res => {
             if (!res.ok) {
@@ -82,8 +82,8 @@ function printInvoice(invoiceData) {
         .then(distributor => {
             invoiceData.distributor = distributor;
             // Generate the HTML for single invoice
-            const htmlContent = generatePrintPageHtml([invoiceData]);
-            openPrintWindow(htmlContent);
+            const htmlContent = generatePrintPageHtml([invoiceData], isMultiUp);
+            openPrintWindow(htmlContent, isMultiUp);
         })
         .catch(err => {
             console.error('Failed to fetch distributor:', err);
@@ -92,7 +92,7 @@ function printInvoice(invoiceData) {
 }
 
 // For multiple invoice printing
-function printSelectedInvoices() {
+function printSelectedInvoices(isMultiUp = false) {
     const selectedCheckboxes = document.querySelectorAll('input[name="selected[]"]:checked');
     
     if (selectedCheckboxes.length === 0) {
@@ -131,8 +131,8 @@ function printSelectedInvoices() {
                 });
                 
                 // Generate the HTML for all invoices
-                const htmlContent = generatePrintPageHtml(invoices);
-                openPrintWindow(htmlContent);
+                const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
+                openPrintWindow(htmlContent, isMultiUp);
             })
             .catch(err => {
                 console.error('Failed to fetch distributor:', err);
@@ -152,35 +152,66 @@ function openPrintWindow(htmlContent) {
         alert('Popup window was blocked. Please allow popups for this site and try again.');
         return;
     }
-    
+
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 }
 
+// Common function to open print window
+function openPrintWindow(htmlContent, isMultiUp = false) {
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+        alert('Popup window was blocked. Please allow popups for this site and try again.');
+        return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    // For multi-up printing, we need to delay the print command slightly
+    if (isMultiUp) {
+        printWindow.onload = function() {
+            setTimeout(() => {
+                printWindow.print();
+                setTimeout(() => printWindow.close(), 100);
+            }, 300);
+        };
+    }
+}
+
 // Common function to generate HTML for printing (single or multiple invoices)
-function generatePrintPageHtml(invoices) {
+function generatePrintPageHtml(invoices, isMultiUp = false) {
     // Generate CSS that will apply to all invoices
     const commonCSS = `
     <style>
         @page {
-            size: 105mm 148mm;
-            margin: 2mm;
+            size: ${isMultiUp ? 'A4' : '105mm 148mm'};
+            margin: ${isMultiUp ? '5mm' : '2mm'};
         }
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: ${isMultiUp ? '10px' : '12px'};
         }
+        ${isMultiUp ? `
+        .multi-up-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 5mm;
+            width: 100%;
+            height: 100%;
+        }
+        ` : ''}
         .invoice-page {
-            page-break-after: always;
-            width: 105mm;
-            height: 148mm;
-            margin: 0 auto;
-        }
-        .invoice-page:last-child {
-            page-break-after: auto;
+            ${isMultiUp ? '' : 'page-break-after: always;'}
+            width: ${isMultiUp ? '90mm' : '100mm'};
+            height: ${isMultiUp ? '140mm' : '144mm'};
+            ${isMultiUp ? 'margin: 0 auto;' : 'margin: 0 auto;'}
+            ${isMultiUp ? 'break-inside: avoid;' : ''}
         }
         .wrapper {
             border: 2px solid black;
@@ -208,43 +239,61 @@ function generatePrintPageHtml(invoices) {
             vertical-align: top;
         }
         .items-container {
-            max-height: 52mm;
+            max-height: ${isMultiUp ? '40mm' : '52mm'};
             overflow: auto;
         }
         .bold { font-weight: bold; }
         .center { text-align: center; }
-        .small { font-size: 9px; }
+        .small { font-size: ${isMultiUp ? '8px' : '9px'}; }
         .cod-line {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .cod-amount {
-            font-size: 18px;
+            font-size: ${isMultiUp ? '14px' : '18px'};
             font-weight: bold;
         }
-        
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
     </style>
     `;
 
     // Generate HTML for all invoices
     let allInvoicesHTML = '';
-    
+
+    if (isMultiUp) {
+        allInvoicesHTML += '<div class="multi-up-container">';
+    }
+
     invoices.forEach((invoiceData, index) => {
         // Generate unique class name for this invoice's items table
         const itemsTableClass = `items-table-${index}`;
-        
+
         // Generate item-specific CSS based on this invoice's item count
-        const itemRowStyle = getItemRowStyle(invoiceData.invoice_items.length, itemsTableClass);
-        
+        const itemRowStyle = getItemRowStyle(invoiceData.invoice_items.length, itemsTableClass, isMultiUp);
+
         // Add invoice-specific CSS and HTML
         allInvoicesHTML += `
         <div class="invoice-page">
             <style>${itemRowStyle}</style>
-            ${generateSingleInvoiceHTML(invoiceData, itemsTableClass)}
+            ${generateSingleInvoiceHTML(invoiceData, itemsTableClass, isMultiUp)}
         </div>`;
+
+        // For multi-up, we need to close the container after every 4 invoices
+        if (isMultiUp && (index + 1) % 4 === 0 && index !== invoices.length - 1) {
+            allInvoicesHTML += '</div><div class="multi-up-container">';
+        }
     });
-    
+
+    if (isMultiUp) {
+        allInvoicesHTML += '</div>';
+    }
+
     // Final HTML content
     return `
 <!DOCTYPE html>
@@ -254,13 +303,16 @@ function generatePrintPageHtml(invoices) {
     <title>${invoices.length > 1 ? 'Print Multiple Invoices' : 'Print Invoice'}</title>
     ${commonCSS}
 </head>
-<body onload="window.print(); setTimeout(() => window.close(), 100);">
+<body onload="${isMultiUp ? '' : 'window.print(); setTimeout(() => window.close(), 100);'}">
     ${allInvoicesHTML}
 </body>
 </html>`;
 }
 // Helper function to generate item row style based on item count
-function getItemRowStyle(itemCount, tableClass) {
+function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
+    let baseSize = isMultiUp ? 10 : 12;
+    let padding = isMultiUp ? '1px' : '2px';
+    
     if (itemCount > 4 && itemCount <= 6) {
         return `
             .${tableClass}{
@@ -269,8 +321,8 @@ function getItemRowStyle(itemCount, tableClass) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: 1.5px;
-                font-size: 10px;
+                padding: ${padding};
+                font-size: ${baseSize - 2}px;
                 text-align: left;
             }
         `;
@@ -282,8 +334,8 @@ function getItemRowStyle(itemCount, tableClass) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: 1.5px;
-                font-size: 8px;
+                padding: ${padding};
+                font-size: ${baseSize - 4}px;
                 text-align: left;
             }
         `;
@@ -295,8 +347,8 @@ function getItemRowStyle(itemCount, tableClass) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: 1px;
-                font-size: 7px;
+                padding: ${isMultiUp ? '0.5px' : '1px'};
+                font-size: ${baseSize - 5}px;
                 text-align: left;
             }
         `;
@@ -308,8 +360,8 @@ function getItemRowStyle(itemCount, tableClass) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: 0.5px;
-                font-size: 6px;
+                padding: ${isMultiUp ? '0.3px' : '0.5px'};
+                font-size: ${baseSize - 6}px;
                 text-align: left;
             }
         `;
@@ -321,8 +373,8 @@ function getItemRowStyle(itemCount, tableClass) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: 2px;
-                font-size: 12px;
+                padding: ${padding};
+                font-size: ${baseSize}px;
                 text-align: left;
             }
         `;
@@ -349,7 +401,7 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
             return '';
         }
     }
-    
+
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
         sub_district = '', post_name = '', mobile = '', mobile2 = '',
@@ -418,11 +470,11 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
                     <div style="font-size: 18px; font-weight: bold;">SPEED POST COD  <span style="font-size: 24px; font-weight: bold;">${codAmount}/-</span></div>
                     <div style="font-size: 12px; text-align:center">${codAmountInWords} Only</div>
                 </div>
-                
+
                 <!-- Customer ID Section -->
                 <div style="flex: 1; padding: 3px; margin: 0;">
-                    <div style="font-size: 16px; font-weight: bold; text-align:center">CUSTOMER ID</div>
-                    <div style="font-size: 16px; font-weight: bold; text-align:center">${customer_id}</div>
+                    <div style="font-size: 14px; font-weight: bold; text-align:center">CUSTOMER ID</div>
+                    <div style="font-size: 20px; font-weight: bold; text-align:center">${customer_id}</div>
                 </div>
             </div>
         </div>
@@ -446,7 +498,7 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
 
         <div class="section items-container">
 
-        
+
 
         <div class="bold">
             Invoice ID : ${id}
@@ -490,14 +542,14 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
 // For Mahavir Courier printing
 function printMahavirCourierInvoices() {
     const selectedCheckboxes = document.querySelectorAll('input[name="selected[]"]:checked');
-    
+
     if (selectedCheckboxes.length === 0) {
         alert('Please select at least one invoice to print.');
         return;
     }
 
     const invoiceIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-    
+
     fetch('get_invoices.php', {
         method: 'POST',
         headers: {
@@ -525,7 +577,7 @@ function printMahavirCourierInvoices() {
                 invoices.forEach(invoice => {
                     invoice.distributor = distributor;
                 });
-                
+
                 // Generate the HTML for all invoices
                 const htmlContent = generateMahavirPrintPageHtml(invoices);
                 openPrintWindow(htmlContent);
@@ -602,14 +654,14 @@ function generateMahavirPrintPageHtml(invoices) {
 
     // Generate HTML for all invoices
     let allInvoicesHTML = '';
-    
+
     invoices.forEach((invoiceData, index) => {
         // Generate unique class name for this invoice's items table
         const itemsTableClass = `items-table-${index}`;
-        
+
         // Generate item-specific CSS based on this invoice's item count
         const itemRowStyle = getItemRowStyle(invoiceData.invoice_items.length, itemsTableClass);
-        
+
         // Add invoice-specific CSS and HTML
         allInvoicesHTML += `
         <div class="invoice-page">
@@ -617,7 +669,7 @@ function generateMahavirPrintPageHtml(invoices) {
             ${generateMahavirInvoiceHTML(invoiceData, itemsTableClass)}
         </div>`;
     });
-    
+
     // Final HTML content
     return `
 <!DOCTYPE html>
@@ -652,7 +704,7 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
             return '';
         }
     }
-    
+
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
         sub_district = '', post_name = '', mobile = '', mobile2 = '',
@@ -689,12 +741,12 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
                     <td><strong>Order date :</strong> ${orderDate}</td>
                     <td><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
-               
+
             </table>
         </div>
 
         <div class="section items-container">
-            
+
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>

@@ -187,6 +187,8 @@
                         </option>
                         <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
+                        <option value="Dispatched" <?php echo $status_filter === 'Dispatched' ? 'selected' : ''; ?>>Dispatched
+                        </option>
                     </select>
 
                     <input type="date" name="start_date" class="p-2 border border-gray-300 rounded-md"
@@ -220,6 +222,8 @@
                             <th class="p-2 border min-w-[120px] bg-gray-200">Employee</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Total</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Adv. Payment</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Repeated Order</th>
+
                             <th class="p-2 border min-w-[140px] bg-gray-200">Created At</th>
                         </tr>
                     </thead>
@@ -293,6 +297,8 @@
                             <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
                             <td class="p-2 border">₹<?php echo number_format($row['total_amount'], 2); ?></td>
                             <td class="p-2 border">₹<?php echo number_format($row['advanced_payment'], 2); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['is_repeated_order']); ?></td>
+
                             <td class="p-2 border"><?php echo date("d-m-Y h:i A", strtotime($row['created_at'])); ?>
                             </td>
                         </tr>

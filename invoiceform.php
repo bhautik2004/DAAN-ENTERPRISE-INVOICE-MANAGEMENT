@@ -6,23 +6,25 @@
 
     $current_user_name = $_SESSION['user'];
     $message           = "";
+    $is_repeated_order = "no"; // Default value
 
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Create_invoice'])) {
         // Customer details
-        $mobile           = $_POST['mobile'];
-        $full_name        = $_POST['full_name'];
-        $address1         = $_POST['address1'];
-        $address2         = $_POST['address2'];
-        $pincode          = $_POST['pincode'];
-        $district         = $_POST['district'];
-        $sub_district     = $_POST['sub_district'];
-        $village          = $_POST['village'];
-        $post_name        = $_POST['post_name'];
-        $mobile2          = $_POST['mobile2'];
-        $barcode_number   = $_POST['barcode_number'];
-        $employee_name    = $_POST['employee_name'];
-        $advanced_payment = (float) $_POST['advanced_payment']; // Convert to float
-        $status           = "Pending";
+        $mobile            = $_POST['mobile'];
+        $full_name         = $_POST['full_name'];
+        $address1          = $_POST['address1'];
+        $address2          = $_POST['address2'];
+        $pincode           = $_POST['pincode'];
+        $district          = $_POST['district'];
+        $sub_district      = $_POST['sub_district'];
+        $village           = $_POST['village'];
+        $post_name         = $_POST['post_name'];
+        $mobile2           = $_POST['mobile2'];
+        $barcode_number    = $_POST['barcode_number'];
+        $employee_name     = $_POST['employee_name'];
+        $advanced_payment  = (float) $_POST['advanced_payment']; // Convert to float
+        $status            = "Pending";
+        $is_repeated_order = $_POST['is_repeated_order'] ?? 'no'; // Get repeated order status
         date_default_timezone_set('Asia/Kolkata');
         $created_at = date("Y-m-d H:i:s");
 
@@ -33,18 +35,17 @@
             // Insert invoice (without product-related fields)
             $query = "INSERT INTO invoices (mobile, full_name, address1, address2, pincode, district,
               sub_district, village, post_name, mobile2, barcode_number, employee_name,
-              customer_id, advanced_payment, status, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+              customer_id, advanced_payment, status, created_at, is_repeated_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt        = $conn->prepare($query);
             $customer_id = $_POST['customer_id']; // Get from form
-            $stmt->bind_param("sssssssssssssdss", $mobile, $full_name, $address1, $address2, $pincode,
+            $stmt->bind_param("sssssssssssssdsss", $mobile, $full_name, $address1, $address2, $pincode,
                 $district, $sub_district, $village, $post_name, $mobile2, $barcode_number,
-                $employee_name, $customer_id, $advanced_payment, $status, $created_at);
+                $employee_name, $customer_id, $advanced_payment, $status, $created_at, $is_repeated_order);
             if (! $stmt->execute()) {
                 throw new Exception("Error creating invoice: " . $stmt->error);
             }
-
             $invoice_id = $conn->insert_id;
             $stmt->close();
 
@@ -335,7 +336,7 @@
                         <div class="relative">
                             <input type="text" id="post_name" name="post_name"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                required>
+                                >
                         </div>
                     </div>
                     <div>
@@ -386,8 +387,7 @@
                     <div>
                         <label class="block text-sm font-semibold mb-1">Barcode Number</label>
                         <input type="text" name="barcode_number"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
+                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Customer ID</label>
@@ -399,6 +399,12 @@
                         <input type="text" name="employee_name"
                             class="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
                             value="<?php echo htmlspecialchars($current_user_name); ?>" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Repeated Order</label>
+                        <input type="text" name="is_repeated_order" id="is_repeated_order"
+                            class="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                            value="<?php echo $is_repeated_order; ?>" readonly>
                     </div>
                 </div>
 
@@ -595,19 +601,25 @@
             if ($result->num_rows > 0) {
                 $customer = $result->fetch_assoc();
                 echo "<script>
-            document.getElementById('mobileNumber').value = '" . addslashes($customer['mobile'] ?? '') . "';
-            document.getElementById('fullName').value = '" . addslashes($customer['full_name'] ?? '') . "';
-            document.getElementById('address1').value = '" . addslashes($customer['address1'] ?? '') . "';
-            document.getElementById('address2').value = '" . addslashes($customer['address2'] ?? '') . "';
-            document.getElementById('pincode').value = '" . addslashes($customer['pincode'] ?? '') . "';
-            document.getElementById('district').value = '" . addslashes($customer['district'] ?? '') . "';
-            document.getElementById('subDistrict').value = '" . addslashes($customer['sub_district'] ?? '') . "';
-            document.getElementById('village').value = '" . addslashes($customer['village'] ?? '') . "';
-             document.getElementById('post_name').value = '" . addslashes($customer['post_name'] ?? '') . "';
-            document.getElementById('mobile2').value = '" . addslashes($customer['mobile2'] ?? '') . "';
+        document.getElementById('mobileNumber').value = '" . addslashes($customer['mobile'] ?? '') . "';
+        document.getElementById('fullName').value = '" . addslashes($customer['full_name'] ?? '') . "';
+        document.getElementById('address1').value = '" . addslashes($customer['address1'] ?? '') . "';
+        document.getElementById('address2').value = '" . addslashes($customer['address2'] ?? '') . "';
+        document.getElementById('pincode').value = '" . addslashes($customer['pincode'] ?? '') . "';
+        document.getElementById('district').value = '" . addslashes($customer['district'] ?? '') . "';
+        document.getElementById('subDistrict').value = '" . addslashes($customer['sub_district'] ?? '') . "';
+        document.getElementById('village').value = '" . addslashes($customer['village'] ?? '') . "';
+        document.getElementById('post_name').value = '" . addslashes($customer['post_name'] ?? '') . "';
+        document.getElementById('mobile2').value = '" . addslashes($customer['mobile2'] ?? '') . "';
+        document.getElementById('is_repeated_order').value = 'yes';
         </script>";
+                $is_repeated_order = "yes";
             } else {
-                echo "<script>alert('Customer not found!');</script>";
+                echo "<script>
+        alert('Customer not found!');
+        document.getElementById('is_repeated_order').value = 'no';
+        </script>";
+                $is_repeated_order = "no";
             }
         }
 

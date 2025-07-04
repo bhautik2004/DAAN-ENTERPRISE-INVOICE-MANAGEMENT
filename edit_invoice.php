@@ -185,14 +185,14 @@
                 <?php echo $_SESSION['error'];unset($_SESSION['error']); ?>
             </div>
             <?php endif; ?>
-<?php if (isset($_SESSION['errors'])): ?>
-<?php foreach ($_SESSION['errors'] as $error): ?>
+            <?php if (isset($_SESSION['errors'])): ?>
+            <?php foreach ($_SESSION['errors'] as $error): ?>
             <div class="p-3 mb-2 rounded-md bg-red-100 text-red-800">
                 <?php echo $error; ?>
             </div>
             <?php endforeach; ?>
-<?php unset($_SESSION['errors']); ?>
-<?php endif; ?>
+            <?php unset($_SESSION['errors']); ?>
+            <?php endif; ?>
         </div>
 
         <div class="flex justify-between items-center mb-4">
@@ -228,7 +228,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Barcode Number*</label>
                     <input type="text" name="barcode_number"
                         value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>"
-                        class="w-full p-2 border border-gray-300 rounded-md" >
+                        class="w-full p-2 border border-gray-300 rounded-md">
                 </div>
 
                 <div class="form-group">
@@ -242,6 +242,9 @@
                             Canceled</option>
                         <option value="Returned" <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
                             Returned</option>
+                        <option value="Dispatched" <?php echo $invoice['status'] === 'Dispatched' ? 'selected' : ''; ?>>
+                            Dispatched
+                        </option>
                     </select>
                 </div>
 
@@ -257,6 +260,12 @@
                     <input type="number" name="advanced_payment"
                         value="<?php echo htmlspecialchars($invoice['advanced_payment']); ?>"
                         class="w-full p-2 border border-gray-300 rounded-md" step="0.01" min="0">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Repeated Order</label>
+                    <input type="text" name="is_repeated_order" id="is_repeated_order"
+                        class="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                        value="<?php echo htmlspecialchars($invoice['is_repeated_order']); ?>" readonly>
                 </div>
             </div>
 
@@ -350,7 +359,8 @@
                                         class="w-full p-2 border rounded quantity-input" min="1" required>
                                 </td>
                                 <td class="py-2 px-4 border">
-                                    <input type="number" name="price_display[]" value="<?php echo $item['product_price']; ?>"
+                                    <input type="number" name="price_display[]"
+                                        value="<?php echo $item['product_price']; ?>"
                                         class="w-full p-2 border rounded price-display" step="0.01" min="0" readonly>
                                 </td>
                                 <td class="py-2 px-4 border">
