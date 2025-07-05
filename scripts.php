@@ -188,7 +188,7 @@ function generatePrintPageHtml(invoices, isMultiUp = false) {
     <style>
         @page {
             size: ${isMultiUp ? 'A4' : '105mm 148mm'};
-            margin: ${isMultiUp ? '5mm' : '2mm'};
+            margin: ${isMultiUp ? '1mm' : '1mm'};
         }
         body {
             margin: 0;

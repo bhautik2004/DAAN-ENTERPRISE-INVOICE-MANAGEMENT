@@ -3,29 +3,28 @@ include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["id"])) {
     $product_id = $_POST["id"];
-
-    // Check if the product exists in invoices before deleting
-    // $checkQuery = "SELECT COUNT(*) AS count FROM invoices WHERE product_id = ?";
-    // $stmtCheck = $conn->prepare($checkQuery);
-    // $stmtCheck->bind_param("i", $product_id);
-    // $stmtCheck->execute();
-    // $resultCheck = $stmtCheck->get_result();
-    // $count = $resultCheck->fetch_assoc()["count"];
-
-    // if ($count > 0) {
-    //     echo "<script>alert('Error: Product cannot be deleted because it is linked to invoices.'); window.location.href='products.php';</script>";
-    //     exit;
-    // }
-
-    // Proceed with deletion
-    $query = "DELETE FROM products WHERE id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $product_id);
-
-    if ($stmt->execute()) {
-        echo "<script>alert('Product deleted successfully.'); window.location.href='products.php';</script>";
+    
+    // Check if product is referenced in invoice_items
+    $check_query = "SELECT COUNT(*) as count FROM invoice_items WHERE product_id = ?";
+    $check_stmt = $conn->prepare($check_query);
+    $check_stmt->bind_param("i", $product_id);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+    $row = $result->fetch_assoc();
+    
+    if ($row['count'] > 0) {
+        echo "<script>alert('Cannot delete product - it is referenced in existing invoices.'); window.location.href='products.php';</script>";
     } else {
-        echo "<script>alert('Error deleting product.'); window.location.href='products.php';</script>";
+        // Proceed with deletion if no references exist
+        $query = "DELETE FROM products WHERE id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $product_id);
+
+        if ($stmt->execute()) {
+            echo "<script>alert('Product deleted successfully.'); window.location.href='products.php';</script>";
+        } else {
+            echo "<script>alert('Error deleting product.'); window.location.href='products.php';</script>";
+        }
     }
 }
 ?>
