@@ -145,18 +145,7 @@ function printSelectedInvoices(isMultiUp = false) {
     });
 }
 
-// Common function to open print window
-function openPrintWindow(htmlContent) {
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
-        alert('Popup window was blocked. Please allow popups for this site and try again.');
-        return;
-    }
 
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-}
 
 // Common function to open print window
 function openPrintWindow(htmlContent, isMultiUp = false) {
@@ -188,7 +177,7 @@ function generatePrintPageHtml(invoices, isMultiUp = false) {
     <style>
         @page {
             size: ${isMultiUp ? 'A4' : '105mm 148mm'};
-            margin: ${isMultiUp ? '1mm' : '1mm'};
+            margin: ${isMultiUp ? '5mm' : '2mm'};
         }
         body {
             margin: 0;
