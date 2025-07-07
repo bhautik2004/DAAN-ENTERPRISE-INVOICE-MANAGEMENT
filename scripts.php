@@ -306,7 +306,7 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
     let baseSize = isMultiUp ? 10 : 12;
     let padding = isMultiUp ? '1px' : '2px';
 
-    if (itemCount > 4 && itemCount <= 6) {
+    if (itemCount >= 4 && itemCount <= 6) {
         return `
             .${tableClass}{
                 width:100%;
@@ -315,7 +315,7 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
                 padding: ${padding};
-                font-size: ${baseSize - 4}px;
+                font-size: ${baseSize - 3}px;
                 text-align: left;
             }
         `;
@@ -461,8 +461,8 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
             <div style="display: flex; border-top: 1px solid black; border-bottom: 1px solid black;">
                 <!-- COD Section -->
                 <div style="flex: 2; padding: 3px; border-right: 1px solid black; margin: 0;">
-                    <div style="font-size: 18px; font-weight: bold ; ">SPEED POST COD  <span style="font-size: 24px; font-weight: bold;">${codAmount}/-</span></div>
-                    <div style="font-size: 12px; text-align:center;">${codAmountInWords} Only</div>
+                    <div style="font-size: 18px; font-weight: bold;">SPEED POST COD  <span style="font-size: 24px; font-weight: bold;">${codAmount}/-</span></div>
+                    <div style="font-size: 12px; text-align:center">${codAmountInWords} Only</div>
                 </div>
 
                 <!-- Customer ID Section -->
@@ -491,16 +491,13 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
         </div>
 
         <div class="section items-container">
-
-
-
-        <div class="bold " style="margin-bottom:5px; font-size:8px;" >
+        <div class="bold" style = "margin-bottom:5px;">
             Invoice ID : ${id}
         </div>
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
-                        <th style>SKU</th>
+                        <th>SKU</th>
                         <th>Item Name</th>
                         <th>Qty.</th>
                         <th>Weight</th>
@@ -606,7 +603,7 @@ function generatePdfFromHtml(htmlContent, filename, isMultiUp = false) {
     });
 
     // Configure margins
-    const margin = 2; // 5mm margin around each invoice
+    const margin = 5; // 5mm margin around each invoice
     const singlePageWidth = 105 - (margin * 2); // Adjusted width with margins
     const singlePageHeight = 148 - (margin * 2); // Adjusted height with margins
 
