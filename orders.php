@@ -308,6 +308,7 @@
             </div>
         </div>
 
+         <?php if ($_SESSION['role'] == 'Admin'): ?>
         <!-- Bulk Actions -->
         <div class="mt-4 flex gap-4 w-full">
             <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded"
@@ -317,6 +318,7 @@
                 onclick="printMahavirCourierInvoices()">Other Courier Print</button>
         </div>
 
+         <?php endif; ?>
         <!-- Pagination -->
         <div class="mt-4 flex justify-center items-center space-x-2">
             <?php if ($page > 1): ?>
@@ -369,6 +371,7 @@
             records
         </div>
 
+           <?php if ($_SESSION['role'] == 'Admin'): ?>
         <!-- Export Form -->
         <div class="mt-6 flex justify-start">
             <form action="export_excel.php" method="post">
@@ -383,6 +386,7 @@
                 </button>
             </form>
         </div>
+           <?php endif; ?>
     </main>
 
     <script>
