@@ -66,7 +66,6 @@ function formatDate(dateString) {
     return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
 }
 
-
 // For single invoice printing
 function printInvoice(invoiceData, isMultiUp = false) {
     fetch('get_distributor.php')
@@ -78,8 +77,9 @@ function printInvoice(invoiceData, isMultiUp = false) {
         })
         .then(distributor => {
             invoiceData.distributor = distributor;
+            // Generate the HTML for single invoice
             const htmlContent = generatePrintPageHtml([invoiceData], isMultiUp);
-            generatePdfFromHtml(htmlContent, `Invoice_${invoiceData.id}.pdf`, isMultiUp);
+            openPrintWindow(htmlContent, isMultiUp);
         })
         .catch(err => {
             console.error('Failed to fetch distributor:', err);
@@ -90,55 +90,57 @@ function printInvoice(invoiceData, isMultiUp = false) {
 // For multiple invoice printing
 function printSelectedInvoices(isMultiUp = false) {
     const selectedCheckboxes = document.querySelectorAll('input[name="selected[]"]:checked');
-
+    
     if (selectedCheckboxes.length === 0) {
         alert('Please select at least one invoice to print.');
         return;
     }
 
     const invoiceIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-
+    
     fetch('get_invoices.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                invoice_ids: invoiceIds
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoice_ids: invoiceIds })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Failed to fetch invoices');
+        }
+        return res.json();
+    })
+    .then(invoices => {
+        // First fetch distributor info
+        fetch('get_distributor.php')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch distributor');
+                }
+                return res.json();
             })
-        })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error('Failed to fetch invoices');
-            }
-            return res.json();
-        })
-        .then(invoices => {
-            fetch('get_distributor.php')
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error('Failed to fetch distributor');
-                    }
-                    return res.json();
-                })
-                .then(distributor => {
-                    invoices.forEach(invoice => {
-                        invoice.distributor = distributor;
-                    });
-                    const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
-                    generatePdfFromHtml(htmlContent, `Invoices_${new Date().toISOString().slice(0,10)}.pdf`,
-                        isMultiUp);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch distributor:', err);
-                    alert('Failed to load distributor info. Please try again.');
+            .then(distributor => {
+                // Add distributor to each invoice
+                invoices.forEach(invoice => {
+                    invoice.distributor = distributor;
                 });
-        })
-        .catch(err => {
-            console.error('Failed to fetch invoices:', err);
-            alert('Failed to load selected invoices. Please try again.');
-        });
+                
+                // Generate the HTML for all invoices
+                const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
+                openPrintWindow(htmlContent, isMultiUp);
+            })
+            .catch(err => {
+                console.error('Failed to fetch distributor:', err);
+                alert('Failed to load distributor info. Please try again.');
+            });
+    })
+    .catch(err => {
+        console.error('Failed to fetch invoices:', err);
+        alert('Failed to load selected invoices. Please try again.');
+    });
 }
+
 // Common function to open print window
 function openPrintWindow(htmlContent, isMultiUp = false) {
     const printWindow = window.open('', '_blank', 'width=800,height=600');
@@ -166,54 +168,49 @@ function openPrintWindow(htmlContent, isMultiUp = false) {
 function generatePrintPageHtml(invoices, isMultiUp = false) {
     // Generate CSS that will apply to all invoices
     const commonCSS = `
-    <style>
+     <style>
         @page {
-            size: ${isMultiUp ? 'A4' : '105mm 148mm'};
-            margin: ${isMultiUp ? '5mm' : '2mm'};
+            size: A4;
         }
         body {
-        -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            font-size: ${isMultiUp ? '10px' : '12px'};
+            font-size: ${isMultiUp ? '12px' : '14px'};
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         ${isMultiUp ? `
         .multi-up-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 5mm;
+            grid-gap: 15mm;
             width: 100%;
             height: 100%;
+            padding: 5mm;
+            box-sizing: border-box;
         }
         ` : ''}
         .invoice-page {
-         -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    transform: translateZ(0); /* Force hardware acceleration */
             ${isMultiUp ? '' : 'page-break-after: always;'}
-            width: ${isMultiUp ? '90mm' : '100mm'};
-            height: ${isMultiUp ? '140mm' : '144mm'};
-            ${isMultiUp ? 'margin: 0 auto;' : 'margin: 0 auto;'}
+            width: ${isMultiUp ? '90mm' : '190mm'};
+            height: ${isMultiUp ? '140mm' : '277mm'};
+            ${isMultiUp ? 'margin: 0;' : 'margin: 0 auto;'}
             ${isMultiUp ? 'break-inside: avoid;' : ''}
             box-sizing: border-box;
         }
         .wrapper {
-        
-         box-shadow: none !important;
-    transform: scale(1) !important;
             border: 2px solid black;
             box-sizing: border-box;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
+            background-color: white; /* Ensure white background */
         }
         .section {
             border-bottom: 1px solid black;
-            padding: 5px;
+            padding: ${isMultiUp ? '3px' : '5px'};
             margin: 0;
         }
         .section:last-child {
@@ -229,29 +226,38 @@ function generatePrintPageHtml(invoices, isMultiUp = false) {
             vertical-align: top;
         }
         .items-container {
-            max-height: ${isMultiUp ? '40mm' : '52mm'};
+            max-height: ${isMultiUp ? '50mm' : '160mm'};
             overflow: auto;
+            margin: ${isMultiUp ? '2px 0' : '3px 0'};
         }
         .bold { font-weight: bold; }
         .center { text-align: center; }
-        .small { font-size: ${isMultiUp ? '8px' : '9px'}; }
+        .small { font-size: ${isMultiUp ? '10px' : '12px'}; }
         .cod-line {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .cod-amount {
-            font-size: ${isMultiUp ? '14px' : '18px'};
+            font-size: ${isMultiUp ? '16px' : '28px'};
             font-weight: bold;
         }
+        
         @media print {
             body {
-            -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                margin: 0;
+                padding: 0;
+                background-color: white;
             }
+            .invoice-page {
+                margin: 0 auto;
+                box-shadow: 0 0 0 2px black; /* Ensure border prints */
+            }
+            ${isMultiUp ? `
+            .multi-up-container {
+                page-break-after: always;
+            }
+            ` : ''}
         }
     </style>
     `;
@@ -301,12 +307,13 @@ function generatePrintPageHtml(invoices, isMultiUp = false) {
 </body>
 </html>`;
 }
+
 // Helper function to generate item row style based on item count
 function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
-    let baseSize = isMultiUp ? 10 : 12;
-    let padding = isMultiUp ? '1px' : '2px';
-
-    if (itemCount >= 4 && itemCount <= 6) {
+    let baseSize = isMultiUp ? 20 : 25; // Increased base font size
+    let padding = isMultiUp ? '3px' : '4px'; // Increased padding
+    
+    if (itemCount > 4 && itemCount <= 6) {
         return `
             .${tableClass}{
                 width:100%;
@@ -315,7 +322,7 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
                 padding: ${padding};
-                font-size: ${baseSize - 3}px;
+                font-size: ${baseSize - 1}px;
                 text-align: left;
             }
         `;
@@ -340,8 +347,8 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: ${isMultiUp ? '0.5px' : '1px'};
-                font-size: ${baseSize - 5}px;
+                padding: ${isMultiUp ? '2px' : '3px'};
+                font-size: ${baseSize - 3}px;
                 text-align: left;
             }
         `;
@@ -353,8 +360,8 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
             }
             .${tableClass} th, .${tableClass} td {
                 border: 1px solid black;
-                padding: ${isMultiUp ? '0.3px' : '0.5px'};
-                font-size: ${baseSize - 6}px;
+                padding: ${isMultiUp ? '1px' : '2px'};
+                font-size: ${baseSize - 4}px;
                 text-align: left;
             }
         `;
@@ -375,15 +382,14 @@ function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
 }
 
 // Function to generate HTML for a single invoice
-function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table') {
-    // Your existing invoice HTML generation logic
+function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table', isMultiUp = false) {
     const distributor = invoiceData.distributor || {};
     const {
         distributer_name = '',
-            distributer_address = '',
-            mobile: dist_mobile = '',
-            email: dist_email = '',
-            note: dist_note = ''
+        distributer_address = '',
+        mobile: dist_mobile = '',
+        email: dist_email = '',
+        note: dist_note = ''
     } = distributor;
 
     if (typeof invoiceData === 'string') {
@@ -397,17 +403,16 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
 
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
-            sub_district = '', post_name = '', mobile = '', mobile2 = '',
-            pincode = '', total_amount = 0, advanced_payment = 0,
-            customer_id = 0,
-            employee_name = '', created_at = '', id = '', invoice_items = []
+        sub_district = '', post_name = '', mobile = '', mobile2 = '',
+        pincode = '', total_amount = 0, advanced_payment = 0,
+        customer_id = 0,
+        employee_name = '', created_at = '', id = '', invoice_items = []
     } = invoiceData;
 
     const codAmount = total_amount;
     const orderDate = new Date(created_at).toLocaleDateString('en-GB');
 
-    // Function to convert number to words
-    function numberToWords(num) {
+     function numberToWords(num) {
         const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
             'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
         ];
@@ -420,8 +425,7 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
             if (n < 20) return ones[n];
             const digit = n % 10;
             if (n < 100) return tens[Math.floor(n / 10)] + (digit ? ' ' + ones[digit] : '');
-            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convertLessThanOneThousand(n % 100) :
-                '');
+            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convertLessThanOneThousand(n % 100) : '');
         }
 
         let result = '';
@@ -445,6 +449,7 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
 
     const codAmountInWords = numberToWords(codAmount);
 
+
     const itemsHTML = invoice_items.map((item) => `
         <tr>
             <td>${item.sku}</td>
@@ -460,55 +465,55 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
         <div class="section" style="padding: 0;">
             <div style="display: flex; border-top: 1px solid black; border-bottom: 1px solid black;">
                 <!-- COD Section -->
-                <div style="flex: 2; padding: 3px; border-right: 1px solid black; margin: 0;">
-                    <div style="font-size: 18px; font-weight: bold;">SPEED POST COD  <span style="font-size: 24px; font-weight: bold;">${codAmount}/-</span></div>
-                    <div style="font-size: 12px; text-align:center">${codAmountInWords} Only</div>
+                <div style="flex: 2; padding: 8px; border-right: 1px solid black; margin: 0;">
+                    <div style="font-size:34px; font-weight: bold;">SPEED POST COD  <span style="font-size: 38px; font-weight: bold;">${codAmount}/-</span></div>
+                    <div style="font-size: 20px; text-align:center">${codAmountInWords} Only</div>
                 </div>
 
                 <!-- Customer ID Section -->
-                <div style="flex: 1; padding: 3px; margin: 0;">
-                    <div style="font-size: 14px; font-weight: bold; text-align:center">CUSTOMER ID</div>
-                    <div style="font-size: 20px; font-weight: bold; text-align:center">${customer_id}</div>
+                <div style="flex: 1; padding: 8px; margin: 0;">
+                    <div style="font-size: 25px; font-weight: bold; text-align:center">CUSTOMER ID</div>
+                    <div style="font-size: 35px; font-weight: bold; text-align:center">${customer_id}</div>
                 </div>
             </div>
         </div>
 
         <div class="section">
-            <div class="bold"><b>To:</div>
-            <div style="text-transform: uppercase; font-size: 15px;">${full_name}</div></b>
-            <div style="font-size: 15px;">${address1}${address2 ? ', ' + address2 : ''}</div>
-            <div style="font-size: 15px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
-            <div class="bold" style="font-size: 15px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+            <div class="bold" style="font-size: 30px;"><b>To:</div>
+            <div style="text-transform: uppercase; font-size: 30px;">${full_name}</div></b>
+            <div style="font-size: 28px;">${address1}${address2 ? ', ' + address2 : ''}</div>
+            <div style="font-size: 28px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
+            <div class="bold" style="font-size: 28px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
         </div>
 
         <div class="section">
             <table class="header-table">
                 <tr>
-                    <td><strong>Order date :</strong> ${orderDate}</td>
-                    <td><strong>Order by :</strong> ${employee_name}</td>
+                    <td style="font-size: 24px"><strong>Order date :</strong> ${orderDate}</td>
+                    <td style="font-size: 24px"><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
             </table>
         </div>
 
         <div class="section items-container">
-        <div class="bold" style = "margin-bottom:5px;">
-            Invoice ID : ${id}
-        </div>
+            <div class="bold" style="font-size:25px">
+                Invoice ID : ${id}
+            </div>
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
-                        <th>SKU</th>
-                        <th>Item Name</th>
-                        <th>Qty.</th>
-                        <th>Weight</th>
-                        <th>Amount</th>
+                        <th style="font-size: ${isMultiUp ? '24px' : '26px'}">SKU</th>
+                        <th style="font-size: ${isMultiUp ? '24px' : '26px'}">Item Name</th>
+                        <th style="font-size: ${isMultiUp ? '24px' : '26px'}">Qty.</th>
+                        <th style="font-size: ${isMultiUp ? '24px' : '26px'}">Weight</th>
+                        <th style="font-size: ${isMultiUp ? '24px' : '26px'}">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${itemsHTML}
                     <tr>
-                        <td colspan="4" class="bold">Order Total</td>
-                        <td class="bold">₹${codAmount}</td>
+                        <td colspan="4" class="bold" style="font-size: ${isMultiUp ? '24px' : '26px'}">Order Total</td>
+                        <td class="bold" style="font-size: ${isMultiUp ? '24px' : '26px'}">₹${codAmount}</td>
                     </tr>
                 </tbody>
             </table>
@@ -516,19 +521,20 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table')
 
         <div class="section">
             <table class="footer-table">
-                <tr><td><b>Pickup and Return Address:</b></td></tr>
-                <tr><td><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
-                <tr><td>${distributer_address}</td></tr>
+                <tr><td style="font-size: 26px"><b>Pickup and Return Address:</b></td></tr>
+                <tr><td style="font-size: 26px"><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
+                <tr><td style="font-size: 26px">${distributer_address}</td></tr>
                 <tr><td></td></tr>
             </table>
         </div>
 
-        <div class="section small">
+        <div class="section small"style="font-size: 20px" >
             <b>Note : </b>
             ${dist_note}
         </div>
     </div>`;
 }
+
 
 // For Mahavir Courier printing
 function printMahavirCourierInvoices() {
@@ -542,161 +548,46 @@ function printMahavirCourierInvoices() {
     const invoiceIds = Array.from(selectedCheckboxes).map(cb => cb.value);
 
     fetch('get_invoices.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                invoice_ids: invoiceIds
-            })
-        })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error('Failed to fetch invoices');
-            }
-            return res.json();
-        })
-        .then(invoices => {
-            fetch('get_distributor.php')
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error('Failed to fetch distributor');
-                    }
-                    return res.json();
-                })
-                .then(distributor => {
-                    invoices.forEach(invoice => {
-                        invoice.distributor = distributor;
-                    });
-                    const htmlContent = generateMahavirPrintPageHtml(invoices);
-                    generatePdfFromHtml(htmlContent,
-                        `Mahavir_Invoices_${new Date().toISOString().slice(0,10)}.pdf`);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch distributor:', err);
-                    alert('Failed to load distributor info. Please try again.');
-                });
-        })
-        .catch(err => {
-            console.error('Failed to fetch invoices:', err);
-            alert('Failed to load selected invoices. Please try again.');
-        });
-}
-
-function generatePdfFromHtml(htmlContent, filename, isMultiUp = false) {
-    // Create a temporary div to hold our HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = isMultiUp ? '190mm' : '105mm';
-    tempDiv.innerHTML = htmlContent;
-    document.body.appendChild(tempDiv);
-
-    // Initialize jsPDF
-    const {
-        jsPDF
-    } = window.jspdf;
-    const pdf = new jsPDF({
-        orientation: isMultiUp ? 'portrait' : 'portrait',
-        unit: 'mm',
-        format: isMultiUp ? 'a4' : [105, 148]
-    });
-
-    // Configure margins
-    const margin = 5; // 5mm margin around each invoice
-    const singlePageWidth = 105 - (margin * 2); // Adjusted width with margins
-    const singlePageHeight = 148 - (margin * 2); // Adjusted height with margins
-
-    // Get all invoice pages
-    const pages = tempDiv.querySelectorAll('.invoice-page');
-
-    // Configure html2canvas options for better quality
-    const html2canvasOptions = {
-        scale: 3,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        letterRendering: true,
-        backgroundColor: '#FFFFFF'
-    };
-
-    // For multi-up, we need to handle layout differently
-    if (isMultiUp) {
-        // Multi-up configuration with margins
-        const multiPageWidth = 90; // mm (original size)
-        const multiPageHeight = 140; // mm (original size)
-        const multiMargin = 5; // mm between invoices
-
-        // Create a canvas for each page and arrange them 2x2
-        const promises = Array.from(pages).map(page => {
-            return html2canvas(page, html2canvasOptions);
-        });
-
-        Promise.all(promises).then(canvases => {
-            // Calculate positions for 2x2 grid with margins
-            const positions = [{
-                    x: margin,
-                    y: margin
-                }, // Top-left
-                {
-                    x: margin + multiPageWidth + multiMargin,
-                    y: margin
-                }, // Top-right
-                {
-                    x: margin,
-                    y: margin + multiPageHeight + multiMargin
-                }, // Bottom-left
-                {
-                    x: margin + multiPageWidth + multiMargin,
-                    y: margin + multiPageHeight + multiMargin
-                } // Bottom-right
-            ];
-
-            // Arrange 4 invoices per A4 page (2x2)
-            for (let i = 0; i < canvases.length; i += 4) {
-                if (i > 0) pdf.addPage();
-
-                // Add up to 4 invoices per page
-                for (let j = 0; j < 4 && (i + j) < canvases.length; j++) {
-                    const canvas = canvases[i + j];
-                    const pos = positions[j];
-                    if (canvas) {
-                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                        pdf.addImage(imgData, 'JPEG', pos.x, pos.y, multiPageWidth, multiPageHeight, null,
-                            'FAST');
-                    }
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoice_ids: invoiceIds })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Failed to fetch invoices');
+        }
+        return res.json();
+    })
+    .then(invoices => {
+        // First fetch distributor info
+        fetch('get_distributor.php')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch distributor');
                 }
-            }
+                return res.json();
+            })
+            .then(distributor => {
+                // Add distributor to each invoice
+                invoices.forEach(invoice => {
+                    invoice.distributor = distributor;
+                });
 
-            // Save the PDF
-            pdf.save(filename);
-            document.body.removeChild(tempDiv);
-        }).catch(error => {
-            console.error('Error generating PDF:', error);
-            document.body.removeChild(tempDiv);
-        });
-    } else {
-        // Single invoice per page with margins
-        const promises = Array.from(pages).map(page => {
-            return html2canvas(page, html2canvasOptions);
-        });
-
-        Promise.all(promises).then(canvases => {
-            canvases.forEach((canvas, index) => {
-                if (index > 0) pdf.addPage();
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                pdf.addImage(imgData, 'JPEG', margin, margin, singlePageWidth, singlePageHeight, null,
-                    'FAST');
+                // Generate the HTML for all invoices
+                const htmlContent = generateMahavirPrintPageHtml(invoices);
+                openPrintWindow(htmlContent);
+            })
+            .catch(err => {
+                console.error('Failed to fetch distributor:', err);
+                alert('Failed to load distributor info. Please try again.');
             });
-
-            // Save the PDF
-            pdf.save(filename);
-            document.body.removeChild(tempDiv);
-        }).catch(error => {
-            console.error('Error generating PDF:', error);
-            document.body.removeChild(tempDiv);
-        });
-    }
+    })
+    .catch(err => {
+        console.error('Failed to fetch invoices:', err);
+        alert('Failed to load selected invoices. Please try again.');
+    });
 }
 
 // Generate HTML for Mahavir Courier printing (without COD section)
@@ -705,42 +596,38 @@ function generateMahavirPrintPageHtml(invoices) {
     const commonCSS = `
     <style>
         @page {
-            size: 105mm 148mm;
-            margin: 2mm;
+            size: A4;
+            margin: ;
         }
         body {
-        -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 14px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         .invoice-page {
-            -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    transform: translateZ(0); /* Force hardware acceleration */
             page-break-after: always;
-            width: 105mm;
-            height: 148mm;
+            width: 210mm;
+            height: 297mm;
             margin: 0 auto;
         }
         .invoice-page:last-child {
             page-break-after: auto;
         }
         .wrapper {
-         box-shadow: none !important;
-    transform: scale(1) !important;
             border: 2px solid black;
             box-sizing: border-box;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
+            padding: 10px;
         }
         .section {
             border-bottom: 1px solid black;
-            padding: 5px;
+            padding: 8px;
             margin: 0;
         }
         .section:last-child {
@@ -752,16 +639,27 @@ function generateMahavirPrintPageHtml(invoices) {
         }
         .header-table td,
         .footer-table td {
-            padding: 2px;
+            padding: 4px;
             vertical-align: top;
+            font-size: 14px;
         }
         .items-container {
-            max-height: 65mm;
+            max-height: 180mm;
             overflow: auto;
         }
         .bold { font-weight: bold; }
         .center { text-align: center; }
-        .small { font-size: 9px; }
+        .small { font-size: 12px; }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .invoice-page {
+                margin: 0 auto;
+            }
+        }
     </style>
     `;
 
@@ -803,10 +701,10 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
     const distributor = invoiceData.distributor || {};
     const {
         distributer_name = '',
-            distributer_address = '',
-            mobile: dist_mobile = '',
-            email: dist_email = '',
-            note: dist_note = ''
+        distributer_address = '',
+        mobile: dist_mobile = '',
+        email: dist_email = '',
+        note: dist_note = ''
     } = distributor;
 
     if (typeof invoiceData === 'string') {
@@ -820,10 +718,10 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
 
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
-            sub_district = '', post_name = '', mobile = '', mobile2 = '',
-            pincode = '', total_amount = 0, advanced_payment = 0,
-            customer_id = 0,
-            employee_name = '', created_at = '', id = '', invoice_items = []
+        sub_district = '', post_name = '', mobile = '', mobile2 = '',
+        pincode = '', total_amount = 0, advanced_payment = 0,
+        customer_id = 0,
+        employee_name = '', created_at = '', id = '', invoice_items = []
     } = invoiceData;
 
     const orderDate = new Date(created_at).toLocaleDateString('en-GB');
@@ -842,57 +740,55 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
     <div class="wrapper">
         <div class="section">
             <div class="bold"><b>To:</div>
-            <div style="text-transform: uppercase; font-size: 15px;">${full_name}</div></b>
-            <div style="font-size: 15px;">${address1}${address2 ? ', ' + address2 : ''}</div>
-            <div style="font-size: 15px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
-            <div class="bold" style="font-size: 15px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+            <div style="text-transform: uppercase; font-size: 16px;">${full_name}</div></b>
+            <div style="font-size: 16px;">${address1}${address2 ? ', ' + address2 : ''}</div>
+            <div style="font-size: 16px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
+            <div class="bold" style="font-size: 16px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
         </div>
 
         <div class="section">
             <table class="header-table">
                 <tr>
-                    <td><strong>Order date :</strong> ${orderDate}</td>
-                    <td><strong>Order by :</strong> ${employee_name}</td>
+                    <td style="font-size: 14px"><strong>Order date :</strong> ${orderDate}</td>
+                    <td style="font-size: 14px"><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
-
             </table>
         </div>
 
         <div class="section items-container">
-
+            <div class="bold" style="font-size: 16px">
+                INVOICE ID : ${id}
+            </div>
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
-                        <th>SKU</th>
-                        <th>Item Name</th>
-                        <th>Qty.</th>
-                        <th>Weight</th>
-                        <th>Amount</th>
+                        <th style="font-size: 14px">SKU</th>
+                        <th style="font-size: 14px">Item Name</th>
+                        <th style="font-size: 14px">Qty.</th>
+                        <th style="font-size: 14px">Weight</th>
+                        <th style="font-size: 14px">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${itemsHTML}
                     <tr>
-                        <td colspan="4" class="bold">Order Total</td>
-                        <td class="bold">₹${total_amount}</td>
+                        <td colspan="4" class="bold" style="font-size: 14px">Order Total</td>
+                        <td class="bold" style="font-size: 14px">₹${total_amount}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="bold">
-            INVOICE ID : ${id}
-        </div>
 
         <div class="section">
             <table class="footer-table">
-                <tr><td><b>Pickup and Return Address:</b></td></tr>
-                <tr><td><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
-                <tr><td>${distributer_address}</td></tr>
+                <tr><td style="font-size: 14px"><b>Pickup and Return Address:</b></td></tr>
+                <tr><td style="font-size: 14px"><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
+                <tr><td style="font-size: 14px">${distributer_address}</td></tr>
                 <tr><td></td></tr>
             </table>
         </div>
 
-        <div class="section small">
+        <div class="section small" style="font-size: 14px">
             <b>Note : </b>
             ${dist_note}
         </div>
@@ -922,7 +818,6 @@ function showMessage(message, type = 'success') {
     }, 5000);
 }
 
-// For error messages with multiple lines (like your validation errors)
 function showErrorMessages(errors) {
     const container = document.getElementById('message-container');
     const messageDiv = document.createElement('div');
