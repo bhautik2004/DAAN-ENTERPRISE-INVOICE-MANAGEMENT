@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 03, 2025 at 12:21 PM
+-- Generation Time: Jul 08, 2025 at 02:41 PM
 -- Server version: 10.4.24-MariaDB
 -- PHP Version: 8.1.6
 
@@ -59,13 +59,6 @@ CREATE TABLE `distributors` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Dumping data for table `distributors`
---
-
-INSERT INTO `distributors` (`id`, `customer_id`, `distributer_name`, `distributer_address`, `mobile`, `email`, `note`, `status`, `created_at`) VALUES
-(1, '123456786', 'DAAN ENTERPRISE', 'DAAN ENTERPRISE 220-SCOND FLOOR-VISHAL SUPREM.. OPP.TORRENT POWER S P. RING ROAD, NIKOL-AHMEDABADAHMEDABAD, Gujarat\r\nIndia : 7693478838', '7693478838', 'daanpost5@gmail.com', 'This is computer generated document hence does not required signature.\r\nNote :\r\nSelf declaration under section 12(2)(b) of the Dehli Jurisdiction.\r\nGoods once sold will only be taken back or exchanged as per the store\'s exchange/returnpolicy.', 'active', '2025-06-30 08:05:10');
-
 -- --------------------------------------------------------
 
 --
@@ -79,13 +72,6 @@ CREATE TABLE `employees` (
   `password` varchar(255) NOT NULL,
   `mobile_no` varchar(15) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `employees`
---
-
-INSERT INTO `employees` (`id`, `employee_name`, `username`, `password`, `mobile_no`) VALUES
-(1, 'Thummar Bhautik', 'bhautik', '$2y$10$wCOBf61OSe38wdzJMn7bJenLsfyvpXsNqE6XBNxovjf5lSYn9g/U.', '9510788164');
 
 -- --------------------------------------------------------
 
@@ -111,7 +97,8 @@ CREATE TABLE `invoices` (
   `total_amount` int(11) NOT NULL,
   `advanced_payment` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
-  `status` varchar(20) NOT NULL DEFAULT 'Pending'
+  `status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `is_repeated_order` enum('yes','no') DEFAULT 'no'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -195,19 +182,19 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `distributors`
 --
 ALTER TABLE `distributors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `employees`
 --
 ALTER TABLE `employees`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `invoices`
