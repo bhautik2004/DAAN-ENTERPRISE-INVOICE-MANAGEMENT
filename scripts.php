@@ -138,15 +138,54 @@ function printInvoice(invoiceData, isMultiUp = false) {
 
 // For multiple invoice printing
 function printSelectedInvoices(isMultiUp = false) {
-    const selectedCheckboxes = document.querySelectorAll('input[name="selected[]"]:checked');
+    const selectAllMode = sessionStorage.getItem('selectAllMode') === 'true';
+    let invoiceIds = [];
     
-    if (selectedCheckboxes.length === 0) {
-        alert('Please select at least one invoice to print.');
-        return;
+    if (selectAllMode) {
+        // Get all invoice IDs from server (excluding any manually unchecked ones)
+        const uncheckedIds = getUncheckedIds();
+        
+        fetch('get_all_invoice_ids.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                exclude_ids: uncheckedIds,
+                search: '<?php echo addslashes($search); ?>',
+                status_filter: '<?php echo addslashes($status_filter); ?>',
+                start_date: '<?php echo addslashes($start_date); ?>',
+                end_date: '<?php echo addslashes($end_date); ?>'
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ids.length === 0) {
+                alert('Please select at least one invoice to print.');
+                return;
+            }
+            proceedWithPrint(data.ids, isMultiUp);
+        })
+        .catch(err => {
+            console.error('Failed to fetch invoice IDs:', err);
+            alert('Failed to load invoice IDs. Please try again.');
+        });
+    } else {
+        // Get selected IDs from sessionStorage
+        invoiceIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
+        if (invoiceIds.length === 0) {
+            alert('Please select at least one invoice to print.');
+            return;
+        }
+        proceedWithPrint(invoiceIds, isMultiUp);
     }
+}
 
-    const invoiceIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-    
+function getUncheckedIds() {
+    const uncheckedBoxes = document.querySelectorAll('input[name="selected[]"]:not(:checked)');
+    return Array.from(uncheckedBoxes).map(cb => cb.value);
+}
+function proceedWithPrint(invoiceIds, isMultiUp) {
     fetch('get_invoices.php', {
         method: 'POST',
         headers: {
@@ -155,27 +194,19 @@ function printSelectedInvoices(isMultiUp = false) {
         body: JSON.stringify({ invoice_ids: invoiceIds })
     })
     .then(res => {
-        if (!res.ok) {
-            throw new Error('Failed to fetch invoices');
-        }
+        if (!res.ok) throw new Error('Failed to fetch invoices');
         return res.json();
     })
     .then(invoices => {
-        // First fetch distributor info
         fetch('get_distributor.php')
             .then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to fetch distributor');
-                }
+                if (!res.ok) throw new Error('Failed to fetch distributor');
                 return res.json();
             })
             .then(distributor => {
-                // Add distributor to each invoice
                 invoices.forEach(invoice => {
                     invoice.distributor = distributor;
                 });
-                
-                // Generate the HTML for all invoices
                 const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
                 openPrintWindow(htmlContent, isMultiUp);
             })

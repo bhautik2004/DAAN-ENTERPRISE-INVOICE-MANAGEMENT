@@ -68,7 +68,7 @@
 
         <?php
             // Search and pagination logic
-            $limit         = 10;
+            $limit = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 10;
             $page          = isset($_GET['page']) ? (int) $_GET['page'] : 1;
             $start         = ($page - 1) * $limit;
             $search        = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -170,23 +170,24 @@
         </form>
 
         <!-- Records per page selector -->
-<div class="mb-4 ml-4">
-    <form method="GET" class="flex items-center">
-        <input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>">
-        <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>">
-        <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>">
-        <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($end_date); ?>">
-        
-        <label for="per_page" class="mr-2">Records per page:</label>
-        <select name="per_page" id="per_page" class="p-2 border border-gray-300 rounded-md" onchange="this.form.submit()">
-            <option value="10" <?php echo $limit == 10 ? 'selected' : ''; ?>>10</option>
-            <option value="25" <?php echo $limit == 25 ? 'selected' : ''; ?>>25</option>
-            <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50</option>
-            <option value="100" <?php echo $limit == 100 ? 'selected' : ''; ?>>100</option>
-            <option value="500" <?php echo $limit == 500 ? 'selected' : ''; ?>>500</option>
-        </select>
-    </form>
-</div>
+        <div class="mb-4 ml-4">
+            <form method="GET" class="flex items-center">
+                <input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>">
+                <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>">
+                <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>">
+                <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($end_date); ?>">
+
+                <label for="per_page" class="mr-2">Records per page:</label>
+                <select name="per_page" id="per_page" class="p-2 border border-gray-300 rounded-md"
+                    onchange="this.form.submit()">
+                    <option value="10" <?php echo $limit == 10 ? 'selected' : ''; ?>>10</option>
+                    <option value="25" <?php echo $limit == 25 ? 'selected' : ''; ?>>25</option>
+                    <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50</option>
+                    <option value="100" <?php echo $limit == 100 ? 'selected' : ''; ?>>100</option>
+                    <option value="500" <?php echo $limit == 500 ? 'selected' : ''; ?>>500</option>
+                </select>
+            </form>
+        </div>
 
         <div class="relative bg-white p-4 rounded-md shadow-md max-w-[calc(100vw-250px)]">
             <div class="overflow-x-auto max-w-full">
@@ -206,7 +207,8 @@
                         </option>
                         <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
-                        <option value="Dispatched" <?php echo $status_filter === 'Dispatched' ? 'selected' : ''; ?>>Dispatched
+                        <option value="Dispatched" <?php echo $status_filter === 'Dispatched' ? 'selected' : ''; ?>>
+                            Dispatched
                         </option>
                     </select>
 
@@ -250,9 +252,9 @@
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
                                 $items_sql = "SELECT ii.*, p.product_name, p.price,p.weight,p.sku
-				                                         FROM invoice_items ii
-				                                         JOIN products p ON ii.product_id = p.id
-				                                         WHERE ii.invoice_id = ?";
+					                                         FROM invoice_items ii
+					                                         JOIN products p ON ii.product_id = p.id
+					                                         WHERE ii.invoice_id = ?";
                                 $items_stmt = $conn->prepare($items_sql);
                                 $items_stmt->bind_param("i", $row['id']);
                                 $items_stmt->execute();
@@ -260,18 +262,18 @@
                                 $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
                             ?>
                         <?php
-                                    // Fetch distributor data for this customer
-                                    $distributor_data = [];
-                                    if (! empty($row['customer_id'])) {
-                                        $distributor_stmt = $conn->prepare("SELECT * FROM distributors WHERE customer_id = ?");
-                                        $distributor_stmt->bind_param("s", $row['customer_id']);
-                                        $distributor_stmt->execute();
-                                        $distributor_result = $distributor_stmt->get_result();
-                                        $distributor_data   = $distributor_result->fetch_assoc();
-                                    }
-                                    
-                                    $row['invoice_items'] = $invoice_items; // Add product info into the row before sending to JS
-                                ?>
+        // Fetch distributor data for this customer
+        $distributor_data = [];
+        if (! empty($row['customer_id'])) {
+            $distributor_stmt = $conn->prepare("SELECT * FROM distributors WHERE customer_id = ?");
+            $distributor_stmt->bind_param("s", $row['customer_id']);
+            $distributor_stmt->execute();
+            $distributor_result = $distributor_stmt->get_result();
+            $distributor_data   = $distributor_result->fetch_assoc();
+        }
+
+        $row['invoice_items'] = $invoice_items; // Add product info into the row before sending to JS
+    ?>
                         <tr class="text-left bg-gray-50 hover:bg-gray-100">
                             <td class="p-2 border"><input type="checkbox" name="selected[]"
                                     value="<?php echo $row['id']; ?>"></td>
@@ -327,7 +329,7 @@
             </div>
         </div>
 
-         <?php if ($_SESSION['role'] == 'Admin'): ?>
+        <?php if ($_SESSION['role'] == 'Admin'): ?>
         <!-- Bulk Actions -->
         <div class="mt-4 flex gap-4 w-full">
             <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded"
@@ -337,7 +339,7 @@
                 onclick="printMahavirCourierInvoices()">Other Courier Print</button>
         </div>
 
-         <?php endif; ?>
+        <?php endif; ?>
         <!-- Pagination -->
         <div class="mt-4 flex justify-center items-center space-x-2">
             <?php if ($page > 1): ?>
@@ -361,7 +363,7 @@
 
             for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded                                                                                                                                                                                             <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                                                                                                                                                                                                            <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -390,7 +392,7 @@
             records
         </div>
 
-           <?php if ($_SESSION['role'] == 'Admin'): ?>
+        <?php if ($_SESSION['role'] == 'Admin'): ?>
         <!-- Export Form -->
         <div class="mt-6 flex justify-start">
             <form action="export_excel.php" method="post">
@@ -405,17 +407,92 @@
                 </button>
             </form>
         </div>
-           <?php endif; ?>
+        <?php endif; ?>
     </main>
 
+
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const selectAllMode = sessionStorage.getItem('selectAllMode') === 'true';
+    const selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
+    
+    document.getElementById('select-all').checked = selectAllMode;
+    
+    if (selectAllMode) {
+        // In select-all mode, check all checkboxes except those manually unchecked
+        const uncheckedIds = selectedIds; // In this case, selectedIds contains manually unchecked IDs
+        const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !uncheckedIds.includes(checkbox.value);
+        });
+    } else if (selectedIds.length > 0) {
+        // In manual selection mode, check the stored IDs
+        selectedIds.forEach(id => {
+            const checkbox = document.querySelector(`input[name="selected[]"][value="${id}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+        updateSelectAllCheckbox();
+    }
+});
     // Select all checkboxes
     document.getElementById('select-all').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="selected[]"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
+    const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+    const isSelectAll = this.checked;
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isSelectAll;
     });
+    
+    // Store the selection state
+    if (isSelectAll) {
+        // When selecting all, store a special flag
+        sessionStorage.setItem('selectAllMode', 'true');
+        sessionStorage.removeItem('selectedInvoiceIds');
+    } else {
+        // When deselecting all, clear everything
+        sessionStorage.removeItem('selectAllMode');
+        sessionStorage.removeItem('selectedInvoiceIds');
+    }
+});
+   document.addEventListener('change', function(e) {
+    if (e.target && e.target.name === 'selected[]') {
+        // If we're in select-all mode and one is unchecked, switch to manual mode
+        if (sessionStorage.getItem('selectAllMode') === 'true' && !e.target.checked) {
+            sessionStorage.removeItem('selectAllMode');
+            
+            // Get all currently checked checkboxes
+            const checkedBoxes = document.querySelectorAll('input[name="selected[]"]:checked');
+            const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
+        }
+        // If not in select-all mode, update the selection normally
+        else if (sessionStorage.getItem('selectAllMode') !== 'true') {
+            let selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
+            
+            if (e.target.checked) {
+                if (!selectedIds.includes(e.target.value)) {
+                    selectedIds.push(e.target.value);
+                }
+            } else {
+                selectedIds = selectedIds.filter(id => id !== e.target.value);
+            }
+            
+            sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
+        }
+        
+        updateSelectAllCheckbox();
+    }
+});
+    function updateSelectAllCheckbox() {
+        const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+        const selectAll = document.getElementById('select-all');
+        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+
+        selectAll.checked = allChecked;
+        sessionStorage.setItem('selectAllInvoices', allChecked);
+    }
 
 
 
