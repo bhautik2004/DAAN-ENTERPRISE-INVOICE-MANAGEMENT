@@ -1,4 +1,53 @@
 <script>
+// Enable double-click to edit barcode
+document.addEventListener('DOMContentLoaded', function() {
+    const barcodeCells = document.querySelectorAll('td:nth-child(7)'); // 7th column is barcode
+    
+    barcodeCells.forEach(cell => {
+        cell.addEventListener('dblclick', function() {
+            const originalValue = this.textContent.trim();
+            const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
+            
+            this.innerHTML = `
+                <form class="flex" onsubmit="saveBarcode(event, ${invoiceId})">
+                    <input type="text" value="${originalValue}" class="w-full p-1 border" id="barcode-input-${invoiceId}">
+                    <button type="submit" class="bg-blue-500 text-white px-2 ml-1">Save</button>
+                </form>
+            `;
+            document.getElementById(`barcode-input-${invoiceId}`).focus();
+        });
+    });
+});
+
+function saveBarcode(event, invoiceId) {
+    event.preventDefault();
+    const newBarcode = event.target.querySelector('input').value;
+    
+    fetch('update_barcode.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            invoice_id: invoiceId,
+            barcode: newBarcode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the cell display
+            event.target.closest('td').textContent = newBarcode;
+            showMessage('Barcode updated successfully!', 'success');
+        } else {
+            showMessage('Error updating barcode: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage('Error updating barcode: ' + error, 'error');
+    });
+}
+
 document.getElementById('toggleSidebar').addEventListener('click', function() {
     let sidebar = document.getElementById('sidebar');
     let mainContent = document.getElementById('mainContent');

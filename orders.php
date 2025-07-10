@@ -169,6 +169,25 @@
             </button>
         </form>
 
+        <!-- Records per page selector -->
+<div class="mb-4 ml-4">
+    <form method="GET" class="flex items-center">
+        <input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>">
+        <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>">
+        <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>">
+        <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($end_date); ?>">
+        
+        <label for="per_page" class="mr-2">Records per page:</label>
+        <select name="per_page" id="per_page" class="p-2 border border-gray-300 rounded-md" onchange="this.form.submit()">
+            <option value="10" <?php echo $limit == 10 ? 'selected' : ''; ?>>10</option>
+            <option value="25" <?php echo $limit == 25 ? 'selected' : ''; ?>>25</option>
+            <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50</option>
+            <option value="100" <?php echo $limit == 100 ? 'selected' : ''; ?>>100</option>
+            <option value="500" <?php echo $limit == 500 ? 'selected' : ''; ?>>500</option>
+        </select>
+    </form>
+</div>
+
         <div class="relative bg-white p-4 rounded-md shadow-md max-w-[calc(100vw-250px)]">
             <div class="overflow-x-auto max-w-full">
                 <!-- Filter Form -->
@@ -210,7 +229,7 @@
                             <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
                             <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
-                            <th class="p-2 border min-w-[120px] bg-gray-200">Barcode</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
                             <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
                             <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
