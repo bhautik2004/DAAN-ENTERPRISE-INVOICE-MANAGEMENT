@@ -227,7 +227,7 @@
                         <tr class="whitespace-nowrap text-left">
                             <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
                             <th class="p-2 border min-w-[150px] text-center bg-gray-200">Actions</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Status</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Status</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
                             <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
                             <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>

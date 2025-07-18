@@ -317,7 +317,7 @@
                         <div class="relative">
                             <input type="text" id="village" name="village"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                required>
+                                >
                             <div id="village-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>
@@ -344,7 +344,7 @@
                         <div class="relative">
                             <input type="text" id="subDistrict" name="sub_district"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                required>
+                                >
                             <div id="sub_district-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>
@@ -353,7 +353,7 @@
                         <div class="relative">
                             <input type="text" id="district" name="district"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                required>
+                                >
                             <div id="district-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>

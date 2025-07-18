@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+
 function saveBarcode(event, invoiceId) {
     event.preventDefault();
     const newBarcode = event.target.querySelector('input').value;
@@ -45,6 +46,60 @@ function saveBarcode(event, invoiceId) {
     })
     .catch(error => {
         showMessage('Error updating barcode: ' + error, 'error');
+    });
+}
+// Enable double-click to edit status
+document.addEventListener('DOMContentLoaded', function() {
+    const statusCells = document.querySelectorAll('td:nth-child(3)'); // 3rd column is status
+    
+    statusCells.forEach(cell => {
+        cell.addEventListener('dblclick', function() {
+            const originalValue = this.textContent.trim();
+            const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
+            
+            this.innerHTML = `
+                <form class="flex" onsubmit="saveStatus(event, ${invoiceId})">
+                    <select class="w-full p-1 border" id="status-input-${invoiceId}">
+                        <option value="Pending" ${originalValue === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Completed" ${originalValue === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="Canceled" ${originalValue === 'Canceled' ? 'selected' : ''}>Canceled</option>
+                        <option value="Returned" ${originalValue === 'Returned' ? 'selected' : ''}>Returned</option>
+                        <option value="Dispatched" ${originalValue === 'Dispatched' ? 'selected' : ''}>Dispatched</option>
+                    </select>
+                    <button type="submit" class="bg-blue-500 text-white px-2 ml-1">Save</button>
+                </form>
+            `;
+            document.getElementById(`status-input-${invoiceId}`).focus();
+        });
+    });
+});
+
+function saveStatus(event, invoiceId) {
+    event.preventDefault();
+    const newStatus = event.target.querySelector('select').value;
+    
+    fetch('update_status.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            invoice_id: invoiceId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the cell display
+            event.target.closest('td').textContent = newStatus;
+            showMessage('Status updated successfully!', 'success');
+        } else {
+            showMessage('Error updating status: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showMessage('Error updating status: ' + error, 'error');
     });
 }
 
@@ -669,15 +724,12 @@ function printMahavirCourierInvoices() {
         alert('Failed to load selected invoices. Please try again.');
     });
 }
-
-// Generate HTML for Mahavir Courier printing (without COD section)
 function generateMahavirPrintPageHtml(invoices) {
     // Generate CSS that will apply to all invoices
     const commonCSS = `
     <style>
         @page {
             size: A4;
-            margin: ;
         }
         body {
             margin: 0;
@@ -703,11 +755,10 @@ function generateMahavirPrintPageHtml(invoices) {
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 10px;
         }
         .section {
             border-bottom: 1px solid black;
-            padding: 8px;
+            padding: 5px;
             margin: 0;
         }
         .section:last-child {
@@ -719,25 +770,26 @@ function generateMahavirPrintPageHtml(invoices) {
         }
         .header-table td,
         .footer-table td {
-            padding: 4px;
+            padding: 2px;
             vertical-align: top;
-            font-size: 14px;
         }
         .items-container {
-            max-height: 180mm;
+            max-height: 160mm;
             overflow: auto;
+            margin: 3px 0;
         }
         .bold { font-weight: bold; }
         .center { text-align: center; }
-        .small { font-size: 12px; }
         
         @media print {
             body {
                 margin: 0;
                 padding: 0;
+                background-color: white;
             }
             .invoice-page {
                 margin: 0 auto;
+                box-shadow: 0 0 0 2px black;
             }
         }
     </style>
@@ -751,7 +803,7 @@ function generateMahavirPrintPageHtml(invoices) {
         const itemsTableClass = `items-table-${index}`;
 
         // Generate item-specific CSS based on this invoice's item count
-        const itemRowStyle = getItemRowStyle(invoiceData.invoice_items.length, itemsTableClass);
+        const itemRowStyle = getItemRowStyle(invoiceData.invoice_items.length, itemsTableClass, false);
 
         // Add invoice-specific CSS and HTML
         allInvoicesHTML += `
@@ -819,41 +871,41 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
     return `
     <div class="wrapper">
         <div class="section">
-            <div class="bold"><b>To:</div>
-            <div style="text-transform: uppercase; font-size: 16px;">${full_name}</div></b>
-            <div style="font-size: 16px;">${address1}${address2 ? ', ' + address2 : ''}</div>
-            <div style="font-size: 16px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
-            <div class="bold" style="font-size: 16px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
+            <div class="bold" style="font-size: 30px;"><b>To:</div>
+            <div style="text-transform: uppercase; font-size: 30px;">${full_name}</div></b>
+            <div style="font-size: 28px;">${address1}${address2 ? ', ' + address2 : ''}</div>
+            <div style="font-size: 28px;">${village}, ${sub_district}, ${district}${pincode ? ' - ' + pincode : ''}</div>
+            <div class="bold" style="font-size: 28px;">MOBILE NO: ${mobile}${mobile2 ? ' / ' + mobile2 : ''}</div>
         </div>
 
         <div class="section">
             <table class="header-table">
                 <tr>
-                    <td style="font-size: 14px"><strong>Order date :</strong> ${orderDate}</td>
-                    <td style="font-size: 14px"><strong>Order by :</strong> ${employee_name}</td>
+                    <td style="font-size: 24px"><strong>Order date :</strong> ${orderDate}</td>
+                    <td style="font-size: 24px"><strong>Order by :</strong> ${employee_name}</td>
                 </tr>
             </table>
         </div>
 
         <div class="section items-container">
-            <div class="bold" style="font-size: 16px">
-                INVOICE ID : ${id}
+            <div class="bold" style="font-size: 26px">
+                Invoice ID : ${id}
             </div>
             <table class="${itemsTableClass}">
                 <thead>
                     <tr>
-                        <th style="font-size: 14px">SKU</th>
-                        <th style="font-size: 14px">Item Name</th>
-                        <th style="font-size: 14px">Qty.</th>
-                        <th style="font-size: 14px">Weight</th>
-                        <th style="font-size: 14px">Amount</th>
+                        <th style="font-size: 26px">SKU</th>
+                        <th style="font-size: 26px">Item Name</th>
+                        <th style="font-size: 26px">Qty.</th>
+                        <th style="font-size: 26px">Weight</th>
+                        <th style="font-size: 26px">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${itemsHTML}
                     <tr>
-                        <td colspan="4" class="bold" style="font-size: 14px">Order Total</td>
-                        <td class="bold" style="font-size: 14px">₹${total_amount}</td>
+                        <td colspan="4" class="bold" style="font-size: 26px">Order Total</td>
+                        <td class="bold" style="font-size: 26px">₹${total_amount}</td>
                     </tr>
                 </tbody>
             </table>
@@ -861,14 +913,14 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
 
         <div class="section">
             <table class="footer-table">
-                <tr><td style="font-size: 14px"><b>Pickup and Return Address:</b></td></tr>
-                <tr><td style="font-size: 14px"><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
-                <tr><td style="font-size: 14px">${distributer_address}</td></tr>
+                <tr><td style="font-size: 26px"><b>Pickup and Return Address:</b></td></tr>
+                <tr><td style="font-size: 26px"><strong>${distributer_name}  - ${dist_mobile}</strong></td></tr>
+                <tr><td style="font-size: 26px">${distributer_address}</td></tr>
                 <tr><td></td></tr>
             </table>
         </div>
 
-        <div class="section small" style="font-size: 14px">
+        <div class="section" style="font-size: 24px">
             <b>Note : </b>
             ${dist_note}
         </div>
