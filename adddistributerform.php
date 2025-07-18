@@ -1,52 +1,52 @@
 <?php
-include 'db.php'; // Database connection
+    include 'db.php'; // Database connection
 
-$message = ""; // Variable to store success/error message
+    $message = ""; // Variable to store success/error message
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $customer_id = trim($_POST['customer_id']);
-    $distributer_name = trim($_POST['distributer_name']);
-    $distributer_address = trim($_POST['distributer_address']);
-    $mobile = trim($_POST['mobile']);
-    $email = trim($_POST['email']);
-    $note = trim($_POST['note']);
-    $status = trim($_POST['status']);
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $customer_id         = trim($_POST['customer_id']);
+        $distributer_name    = trim($_POST['distributer_name']);
+        $distributer_address = trim($_POST['distributer_address']);
+        $mobile              = trim($_POST['mobile']);
+        $email               = trim($_POST['email']);
+        $note                = trim($_POST['note']);
+        $status              = trim($_POST['status']);
 
-    // Basic validation
-    if (empty($customer_id) || empty($distributer_name) || empty($distributer_address) || empty($mobile)) {
-        $message = "<p class='text-red-500'>Customer ID, Name, Address, and Mobile are required!</p>";
-    } else {
-        // Check if distributor already exists by customer_id
-        $check_stmt = $conn->prepare("SELECT id FROM distributors WHERE customer_id = ?");
-        $check_stmt->bind_param("s", $customer_id);
-        $check_stmt->execute();
-        $check_stmt->store_result();
-
-        if ($check_stmt->num_rows > 0) {
-            $message = "<p class='text-red-500'>Distributor with this Customer ID already exists!</p>";
+        // Basic validation
+        if (empty($customer_id) || empty($distributer_name) || empty($distributer_address) || empty($mobile)) {
+            $message = "<p class='text-red-500'>Customer ID, Name, Address, and Mobile are required!</p>";
         } else {
-            // Insert new distributor
-            $stmt = $conn->prepare("INSERT INTO distributors (customer_id, distributer_name, distributer_address, mobile, email, note, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssss", $customer_id, $distributer_name, $distributer_address, $mobile, $email, $note, $status);
+            // Check if distributor already exists by customer_id
+            $check_stmt = $conn->prepare("SELECT id FROM distributors WHERE customer_id = ?");
+            $check_stmt->bind_param("s", $customer_id);
+            $check_stmt->execute();
+            $check_stmt->store_result();
 
-            if ($stmt->execute()) {
-                $message = "<p class='text-green-500'>Distributor added successfully!</p>";
+            if ($check_stmt->num_rows > 0) {
+                $message = "<p class='text-red-500'>Distributor with this Customer ID already exists!</p>";
             } else {
-                $message = "<p class='text-red-500'>Error: " . $stmt->error . "</p>";
+                // Insert new distributor
+                $stmt = $conn->prepare("INSERT INTO distributors (customer_id, distributer_name, distributer_address, mobile, email, note, status) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("sssssss", $customer_id, $distributer_name, $distributer_address, $mobile, $email, $note, $status);
+
+                if ($stmt->execute()) {
+                    $message = "<p class='text-green-500'>Distributor added successfully!</p>";
+                } else {
+                    $message = "<p class='text-red-500'>Error: " . $stmt->error . "</p>";
+                }
+                $stmt->close();
             }
-            $stmt->close();
+            $check_stmt->close();
         }
-        $check_stmt->close();
+        $conn->close();
     }
-    $conn->close();
-}
 ?>
 
 <section class="mt-8">
     <h3 class="text-xl font-bold text-[var(--primary-color)] mb-4 text-center">Add Distributor</h3>
 
     <!-- Message Display -->
-    <?php if (!empty($message)) : ?>
+    <?php if (! empty($message)): ?>
         <div class="text-center mb-4">
             <?php echo $message; ?>
         </div>

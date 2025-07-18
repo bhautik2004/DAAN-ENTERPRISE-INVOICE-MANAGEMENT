@@ -118,7 +118,7 @@
 
             <?php for ($i = 1; $i <= $totalPages; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"
-                class="px-4 py-2                                    <?php echo($i == $page) ? 'bg-blue-500 text-white' : 'bg-gray-300'; ?> rounded">
+                class="px-4 py-2                                                                    <?php echo($i == $page) ? 'bg-blue-500 text-white' : 'bg-gray-300'; ?> rounded">
                 <?php echo $i; ?>
             </a>
             <?php endfor; ?>

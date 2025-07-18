@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 
 try {
     // Get the POST data
-    $data = json_decode(file_get_contents('php://input'), true);
+    $data       = json_decode(file_get_contents('php://input'), true);
     $invoiceIds = $data['invoice_ids'] ?? [];
 
     if (empty($invoiceIds)) {
@@ -14,9 +14,9 @@ try {
 
     // Prepare the query with placeholders
     $placeholders = implode(',', array_fill(0, count($invoiceIds), '?'));
-    $sql = "SELECT * FROM invoices WHERE id IN ($placeholders)";
-    $stmt = $conn->prepare($sql);
-    
+    $sql          = "SELECT * FROM invoices WHERE id IN ($placeholders)";
+    $stmt         = $conn->prepare($sql);
+
     // Bind parameters
     $types = str_repeat('i', count($invoiceIds));
     $stmt->bind_param($types, ...$invoiceIds);
@@ -33,11 +33,11 @@ try {
         $items_stmt = $conn->prepare($items_sql);
         $items_stmt->bind_param("i", $row['id']);
         $items_stmt->execute();
-        $items_result = $items_stmt->get_result();
+        $items_result  = $items_stmt->get_result();
         $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
-        
+
         $row['invoice_items'] = $invoice_items;
-        $invoices[] = $row;
+        $invoices[]           = $row;
     }
 
     echo json_encode($invoices);
@@ -45,4 +45,3 @@ try {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
-?>

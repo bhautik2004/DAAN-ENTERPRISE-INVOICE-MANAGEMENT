@@ -6,44 +6,44 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 // Create new Spreadsheet object
 $spreadsheet = new Spreadsheet();
-$sheet = $spreadsheet->getActiveSheet();
+$sheet       = $spreadsheet->getActiveSheet();
 
 // Set headers
 $headers = [
-    'A' => 'Invoice ID',
-    'B' => 'Mobile',
-    'C' => 'Full Name',
-    'D' => 'Address 1',
-    'E' => 'Address 2',
-    'F' => 'Pincode',
-    'G' => 'District',
-    'H' => 'Sub District',
-    'I' => 'Village',
-    'J' => 'Post Name',
-    'K' => 'Mobile 2',
-    'L' => 'Barcode Number',
-    'M' => 'Employee Name',
-    'N' => 'Customer ID',
-    'O' => 'Total Amount',
-    'P' => 'Advanced Payment',
-    'Q' => 'Created At',
-    'R' => 'Status',
+    'A'  => 'Invoice ID',
+    'B'  => 'Mobile',
+    'C'  => 'Full Name',
+    'D'  => 'Address 1',
+    'E'  => 'Address 2',
+    'F'  => 'Pincode',
+    'G'  => 'District',
+    'H'  => 'Sub District',
+    'I'  => 'Village',
+    'J'  => 'Post Name',
+    'K'  => 'Mobile 2',
+    'L'  => 'Barcode Number',
+    'M'  => 'Employee Name',
+    'N'  => 'Customer ID',
+    'O'  => 'Total Amount',
+    'P'  => 'Advanced Payment',
+    'Q'  => 'Created At',
+    'R'  => 'Status',
     // Products (5 sets of product_id, quantity, discount)
-    'S' => 'Product 1 ID',
-    'T' => 'Quantity 1',
-    'U' => 'Discount 1',
-    'V' => 'Product 2 ID',
-    'W' => 'Quantity 2',
-    'X' => 'Discount 2',
-    'Y' => 'Product 3 ID',
-    'Z' => 'Quantity 3',
+    'S'  => 'Product 1 ID',
+    'T'  => 'Quantity 1',
+    'U'  => 'Discount 1',
+    'V'  => 'Product 2 ID',
+    'W'  => 'Quantity 2',
+    'X'  => 'Discount 2',
+    'Y'  => 'Product 3 ID',
+    'Z'  => 'Quantity 3',
     'AA' => 'Discount 3',
     'AB' => 'Product 4 ID',
     'AC' => 'Quantity 4',
     'AD' => 'Discount 4',
     'AE' => 'Product 5 ID',
     'AF' => 'Quantity 5',
-    'AG' => 'Discount 5'
+    'AG' => 'Discount 5',
 ];
 
 // Set header row
@@ -75,11 +75,11 @@ $sheet->getColumnDimension('Q')->setWidth(20);
 $sheet->getColumnDimension('R')->setWidth(15);
 
 foreach ($headers as $col => $header) {
-    $sheet->setCellValue($col.'1', $header);
-    $sheet->getStyle($col.'1')->getFont()->setBold(true);
-    $sheet->getStyle($col.'1')->getFill()
-          ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-          ->getStartColor()->setARGB('FFDDDDDD');
+    $sheet->setCellValue($col . '1', $header);
+    $sheet->getStyle($col . '1')->getFont()->setBold(true);
+    $sheet->getStyle($col . '1')->getFill()
+        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        ->getStartColor()->setARGB('FFDDDDDD');
 }
 
 // Freeze header row
@@ -110,7 +110,7 @@ $exampleData = [
     'U' => '10',      // Discount 1 (%)
     'V' => 'PROD002', // Product 2 ID
     'W' => '1',       // Quantity 2
-    'X' => '5'        // Discount 2 (%)
+    'X' => '5',       // Discount 2 (%)
 ];
 
 foreach ($exampleData as $col => $value) {

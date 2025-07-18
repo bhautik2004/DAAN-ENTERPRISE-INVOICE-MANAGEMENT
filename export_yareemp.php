@@ -1,5 +1,5 @@
 <?php
-include('db.php'); // Include database connection
+include 'db.php'; // Include database connection
 
 // Set headers for Excel file download
 header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
@@ -11,12 +11,12 @@ header("Expires: 0");
 $selected_year = isset($_GET['filter_year']) ? $_GET['filter_year'] : date('Y');
 
 // Query to get all data for export
-$emp_yearly_sql = "SELECT employee_name, 
+$emp_yearly_sql = "SELECT employee_name,
                     COALESCE(SUM(total_amount), 0) AS total_yearly_revenue
-                    FROM invoices 
-                    WHERE status='Completed' 
+                    FROM invoices
+                    WHERE status='Completed'
                     AND YEAR(created_at) = '$selected_year'
-                    GROUP BY employee_name 
+                    GROUP BY employee_name
                     ORDER BY total_yearly_revenue DESC";
 
 $emp_yearly_result = $conn->query($emp_yearly_sql);
@@ -43,4 +43,3 @@ if ($emp_yearly_result->num_rows > 0) {
 
 echo "</table>";
 exit();
-?>

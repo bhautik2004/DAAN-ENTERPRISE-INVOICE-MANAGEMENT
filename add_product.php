@@ -3,7 +3,7 @@ include 'db.php'; // Include the database connection
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $product_name = $_POST['product_name'];
-    $price = $_POST['price'];
+    $price        = $_POST['price'];
 
     // Validate inputs
     if (empty($product_name) || empty($price)) {
@@ -22,4 +22,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 $conn->close();
-?>

@@ -1,5 +1,5 @@
 <?php
-include('db.php'); // Include database connection
+include 'db.php'; // Include database connection
 
 // Set headers for Excel file download
 header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
@@ -9,19 +9,19 @@ header("Expires: 0");
 
 // Fetch selected month and year from URL parameters
 $selected_month = isset($_GET['filter_month']) ? $_GET['filter_month'] : date('m');
-$selected_year = isset($_GET['filter_year']) ? $_GET['filter_year'] : date('Y');
+$selected_year  = isset($_GET['filter_year']) ? $_GET['filter_year'] : date('Y');
 
 // Convert month number to month name
 $month_name = date("F", mktime(0, 0, 0, $selected_month, 1));
 
 // Query to get all data for export
-$emp_monthly_sql = "SELECT employee_name, 
+$emp_monthly_sql = "SELECT employee_name,
                     COALESCE(SUM(total_amount), 0) AS total_monthly_revenue
-                    FROM invoices 
-                    WHERE status='Completed' 
-                    AND MONTH(created_at) = '$selected_month' 
+                    FROM invoices
+                    WHERE status='Completed'
+                    AND MONTH(created_at) = '$selected_month'
                     AND YEAR(created_at) = '$selected_year'
-                    GROUP BY employee_name 
+                    GROUP BY employee_name
                     ORDER BY total_monthly_revenue DESC";
 
 $emp_monthly_result = $conn->query($emp_monthly_sql);
@@ -49,4 +49,3 @@ if ($emp_monthly_result->num_rows > 0) {
 
 echo "</table>";
 exit();
-?>

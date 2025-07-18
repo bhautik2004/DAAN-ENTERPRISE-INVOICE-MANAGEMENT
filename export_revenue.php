@@ -21,15 +21,15 @@ echo "<tr>
       </tr>";
 
 // Fetch total revenue **year-wise**
-$revenue_sql = "SELECT 
-    COALESCE(SUM(total_amount), 0) as total_revenue, 
+$revenue_sql = "SELECT
+    COALESCE(SUM(total_amount), 0) as total_revenue,
     COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE()) THEN total_amount ELSE 0 END), 0) as monthly_revenue,
     COALESCE(SUM(CASE WHEN MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) AND YEAR(created_at) = YEAR(CURRENT_DATE()) THEN total_amount ELSE 0 END), 0) as last_month_revenue,
     COALESCE(SUM(CASE WHEN YEAR(created_at) = YEAR(CURRENT_DATE()) THEN total_amount ELSE 0 END), 0) as yearly_revenue
     FROM invoices WHERE status='Completed'";
 
 $revenue_result = $conn->query($revenue_sql);
-$revenue_data = $revenue_result->fetch_assoc();
+$revenue_data   = $revenue_result->fetch_assoc();
 
 // Print total revenue row **year-wise**
 echo "<tr>
@@ -40,13 +40,13 @@ echo "<tr>
         <td><strong>" . number_format($revenue_data['total_revenue'], 2) . "</strong></td>
       </tr>";
 
-// Fetch employee-wise revenue **year-wise**  
-$emp_sql = "SELECT 
-            employee_name, 
+// Fetch employee-wise revenue **year-wise**
+$emp_sql = "SELECT
+            employee_name,
             (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE status='Completed' AND employee_name=i.employee_name AND MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())) AS monthly_revenue,
             (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE status='Completed' AND employee_name=i.employee_name AND MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) AND YEAR(created_at) = YEAR(CURRENT_DATE())) AS last_month_revenue,
             (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE status='Completed' AND employee_name=i.employee_name AND YEAR(created_at) = YEAR(CURRENT_DATE())) AS yearly_revenue
-            FROM invoices i 
+            FROM invoices i
             WHERE status='Completed'
             GROUP BY employee_name
             ORDER BY employee_name ASC";
@@ -65,4 +65,3 @@ while ($row = $emp_result->fetch_assoc()) {
 }
 
 echo "</table></body></html>";
-?>

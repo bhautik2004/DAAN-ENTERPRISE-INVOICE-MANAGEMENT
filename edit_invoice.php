@@ -111,17 +111,17 @@
                     $product_id = $product_ids[$i] ?? null;
                     $quantity   = $quantities[$i] ?? 0;
                     $discount   = $discounts[$i] ?? 0;
-                    
+
                     // Get product price from products table
-                    $price_sql = "SELECT price FROM products WHERE id = ?";
+                    $price_sql  = "SELECT price FROM products WHERE id = ?";
                     $price_stmt = $conn->prepare($price_sql);
                     $price_stmt->bind_param("i", $product_id);
                     $price_stmt->execute();
                     $price_result = $price_stmt->get_result();
-                    $product = $price_result->fetch_assoc();
-                    $price = $product['price'];
-                    
-                    $row_total  = ($price * $quantity) - $discount;
+                    $product      = $price_result->fetch_assoc();
+                    $price        = $product['price'];
+
+                    $row_total = ($price * $quantity) - $discount;
                     $total_amount += $row_total;
 
                     if (empty($product_id) || empty($quantity)) {

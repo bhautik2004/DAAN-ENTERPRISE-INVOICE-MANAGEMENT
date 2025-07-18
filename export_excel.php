@@ -42,17 +42,17 @@ fwrite($output, $header);
 
 // Date filter
 $from_date = $_POST['from_date'] ?? '';
-$to_date = $_POST['to_date'] ?? '';
+$to_date   = $_POST['to_date'] ?? '';
 
-if (!empty($from_date) && !empty($to_date)) {
-    $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile 
+if (! empty($from_date) && ! empty($to_date)) {
+    $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile
                            FROM invoices i
                            LEFT JOIN distributors d ON i.customer_id = d.customer_id
-                           WHERE DATE(i.created_at) BETWEEN ? AND ? 
+                           WHERE DATE(i.created_at) BETWEEN ? AND ?
                            ORDER BY i.created_at");
     $stmt->bind_param("ss", $from_date, $to_date);
 } else {
-    $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile 
+    $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile
                            FROM invoices i
                            LEFT JOIN distributors d ON i.customer_id = d.customer_id
                            ORDER BY i.created_at");
@@ -64,24 +64,24 @@ $result = $stmt->get_result();
 $serial = 1;
 while ($row = $result->fetch_assoc()) {
     // Get the total weight for this invoice
-    $weight_stmt = $conn->prepare("SELECT SUM(ii.quantity * p.weight) AS total_weight 
+    $weight_stmt = $conn->prepare("SELECT SUM(ii.quantity * p.weight) AS total_weight
                                   FROM invoice_items ii
                                   JOIN products p ON ii.product_id = p.id
                                   WHERE ii.invoice_id = ?");
     $weight_stmt->bind_param("i", $row['id']);
     $weight_stmt->execute();
     $weight_result = $weight_stmt->get_result();
-    $weight_row = $weight_result->fetch_assoc();
-    $total_weight = $weight_row['total_weight'] ?? 0;
+    $weight_row    = $weight_result->fetch_assoc();
+    $total_weight  = $weight_row['total_weight'] ?? 0;
     $weight_stmt->close();
 
     // Format the date (only date, no time)
     $formatted_date = date('d-m-Y', strtotime($row['created_at']));
-    
+
     // Prepare data (removed City and Pincode columns)
     $data = [
         $serial, // SL (A)
-        htmlspecialchars($formatted_date), 
+        htmlspecialchars($formatted_date),
         htmlspecialchars($row['barcode_number']),
         '',
         htmlspecialchars($row['village']),
@@ -89,26 +89,26 @@ while ($row = $result->fetch_assoc()) {
         htmlspecialchars($row['full_name']),
         htmlspecialchars($row['address1']),
         htmlspecialchars($row['district']),
-        htmlspecialchars($row['district']), 
-        htmlspecialchars($row['district']), 
-        htmlspecialchars($row['mobile']), 
-        htmlspecialchars($row['sender_mobile'] ?? 'N/A'), 
-        htmlspecialchars($total_weight), 
+        htmlspecialchars($row['district']),
+        htmlspecialchars($row['district']),
+        htmlspecialchars($row['mobile']),
+        htmlspecialchars($row['sender_mobile'] ?? 'N/A'),
+        htmlspecialchars($total_weight),
         htmlspecialchars($row['total_amount']),
         '',
         '',
-        '10', 
-        '10', 
-        '5'  
+        '10',
+        '10',
+        '5',
     ];
-    
+
     // Write row to Excel
     fwrite($output, "<tr>");
     foreach ($data as $value) {
         fwrite($output, "<td>" . $value . "</td>");
     }
     fwrite($output, "</tr>");
-    
+
     $serial++;
 }
 
@@ -117,4 +117,3 @@ fwrite($output, "</table>");
 
 fclose($output);
 exit;
-?>

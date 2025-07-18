@@ -9,8 +9,8 @@ try {
     if ($result && $result->num_rows > 0) {
         $row = $result->fetch_assoc();
         echo json_encode([
-            'success' => true,
-            'total_amount' => (float)$row['total_amount']
+            'success'      => true,
+            'total_amount' => (float) $row['total_amount'],
         ]);
     } else {
         throw new Exception('Invoice not found');
@@ -18,7 +18,6 @@ try {
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
     ]);
 }
-?>

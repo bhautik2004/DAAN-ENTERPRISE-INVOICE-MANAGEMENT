@@ -1,49 +1,48 @@
 <?php
-include 'db.php'; // Database connection
+    include 'db.php'; // Database connection
 
+    $message = ""; // Variable to store success/error message
 
-$message = ""; // Variable to store success/error message
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $product_name = trim($_POST['product_name']);
+        $sku          = trim($_POST['sku']);
+        $price        = $_POST['price'];
+        $weight       = $_POST['weight'];
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $product_name = trim($_POST['product_name']);
-    $sku = trim($_POST['sku']);
-    $price = $_POST['price'];
-    $weight = $_POST['weight'];
-
-    if (empty($product_name) || empty($price)) {
-        $message = "<p class='text-red-500'>All fields are required!</p>";
-    } else {
-        // Check if product already exists
-        $check_stmt = $conn->prepare("SELECT id FROM products WHERE product_name = ?");
-        $check_stmt->bind_param("s", $product_name);
-        $check_stmt->execute();
-        $check_stmt->store_result();
-
-        if ($check_stmt->num_rows > 0) {
-            $message = "<p class='text-red-500'>Product already exists!</p>";
+        if (empty($product_name) || empty($price)) {
+            $message = "<p class='text-red-500'>All fields are required!</p>";
         } else {
-            // Insert new product
-            $stmt = $conn->prepare("INSERT INTO products (product_name,sku, price,weight) VALUES (?,?, ?,?)");
-            $stmt->bind_param("ssdd", $product_name,$sku, $price,$weight);
+            // Check if product already exists
+            $check_stmt = $conn->prepare("SELECT id FROM products WHERE product_name = ?");
+            $check_stmt->bind_param("s", $product_name);
+            $check_stmt->execute();
+            $check_stmt->store_result();
 
-            if ($stmt->execute()) {
-                $message = "<p class='text-green-500'>Product added successfully!</p>";
+            if ($check_stmt->num_rows > 0) {
+                $message = "<p class='text-red-500'>Product already exists!</p>";
             } else {
-                $message = "<p class='text-red-500'>Error: " . $stmt->error . "</p>";
+                // Insert new product
+                $stmt = $conn->prepare("INSERT INTO products (product_name,sku, price,weight) VALUES (?,?, ?,?)");
+                $stmt->bind_param("ssdd", $product_name, $sku, $price, $weight);
+
+                if ($stmt->execute()) {
+                    $message = "<p class='text-green-500'>Product added successfully!</p>";
+                } else {
+                    $message = "<p class='text-red-500'>Error: " . $stmt->error . "</p>";
+                }
+                $stmt->close();
             }
-            $stmt->close();
+            $check_stmt->close();
         }
-        $check_stmt->close();
     }
-}
-$conn->close();
+    $conn->close();
 ?>
 
 <section class="mt-8">
     <h3 class="text-xl font-bold text-[var(--primary-color)] mb-4 text-center">Add Product</h3>
 
     <!-- Message Display -->
-    <?php if (!empty($message)) : ?>
+    <?php if (! empty($message)): ?>
         <div class="text-center mb-4">
             <?php echo $message; ?>
         </div>

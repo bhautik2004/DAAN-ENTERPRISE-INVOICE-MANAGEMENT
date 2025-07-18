@@ -1,62 +1,60 @@
 <?php
-session_start(); // Start session
+    session_start(); // Start session
 
-// Redirect if user is already logged in
-if (isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === "Admin") {
-        header("Location: index.php"); // Redirect admin to admin dashboard
-        exit();
-    } elseif ($_SESSION['role'] === "Employee") {
-        header("Location: index.php"); // Redirect employee to employee dashboard
-        exit();
-    }
-}
-
-
-
-   include 'db.php';
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['role'])) {
-    $role = $_POST['role'];
-    $emailOrUsername = $_POST['email_or_username'];
-    $password = $_POST['password'];
-
-    if ($role === "admin") {
-        $stmt = $conn->prepare("SELECT * FROM admins WHERE email = ?");
-    } else {
-        $stmt = $conn->prepare("SELECT * FROM employees WHERE username = ?");
-    }
-
-    $stmt->bind_param("s", $emailOrUsername);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-
-        if (password_verify($password, $user['password'])) {
-            $_SESSION['user'] = ($role === "admin") ? $user['name'] : $user['employee_name'];
-            $_SESSION['role'] = ucfirst($role);
-            $_SESSION['email'] = ($role === "admin") ? $user['email'] : "";
-            if ($role === "admin") {
-                $_SESSION['admin_id'] = $user['id']; // Store admin ID in session
-            }
-
-            $redirectPage = ($role === "admin") ? "index.php" : "index.php";
-            header("Location: " . $redirectPage);
+    // Redirect if user is already logged in
+    if (isset($_SESSION['role'])) {
+        if ($_SESSION['role'] === "Admin") {
+            header("Location: index.php"); // Redirect admin to admin dashboard
             exit();
-        } else {
-            $_SESSION[$role . '_message'] = "Invalid credentials. Please try again.";
-            $_SESSION['login_role'] = $role; // Store role for showing correct form
+        } elseif ($_SESSION['role'] === "Employee") {
+            header("Location: index.php"); // Redirect employee to employee dashboard
+            exit();
         }
-    } else {
-        $_SESSION[$role . '_message'] = "No user found with these credentials.";
-        $_SESSION['login_role'] = $role;
     }
 
-    header("Location: login.php"); // Redirect back to show error message
-    exit();
-}
+    include 'db.php';
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['role'])) {
+        $role            = $_POST['role'];
+        $emailOrUsername = $_POST['email_or_username'];
+        $password        = $_POST['password'];
+
+        if ($role === "admin") {
+            $stmt = $conn->prepare("SELECT * FROM admins WHERE email = ?");
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM employees WHERE username = ?");
+        }
+
+        $stmt->bind_param("s", $emailOrUsername);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $user = $result->fetch_assoc();
+
+            if (password_verify($password, $user['password'])) {
+                $_SESSION['user']  = ($role === "admin") ? $user['name'] : $user['employee_name'];
+                $_SESSION['role']  = ucfirst($role);
+                $_SESSION['email'] = ($role === "admin") ? $user['email'] : "";
+                if ($role === "admin") {
+                    $_SESSION['admin_id'] = $user['id']; // Store admin ID in session
+                }
+
+                $redirectPage = ($role === "admin") ? "index.php" : "index.php";
+                header("Location: " . $redirectPage);
+                exit();
+            } else {
+                $_SESSION[$role . '_message'] = "Invalid credentials. Please try again.";
+                $_SESSION['login_role']       = $role; // Store role for showing correct form
+            }
+        } else {
+            $_SESSION[$role . '_message'] = "No user found with these credentials.";
+            $_SESSION['login_role']       = $role;
+        }
+
+        header("Location: login.php"); // Redirect back to show error message
+        exit();
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -98,10 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['role'])) {
 
     <!-- Display Error Message for Admin -->
     <?php
-    if (isset($_SESSION['admin_message'])) {
-        echo "<div class='bg-red-100 text-red-700 p-3 rounded-md mb-4'>{$_SESSION['admin_message']}</div>";
-        unset($_SESSION['admin_message']); // Clear message after displaying
-    }
+        if (isset($_SESSION['admin_message'])) {
+            echo "<div class='bg-red-100 text-red-700 p-3 rounded-md mb-4'>{$_SESSION['admin_message']}</div>";
+            unset($_SESSION['admin_message']); // Clear message after displaying
+        }
     ?>
 
     <form method="POST" class="space-y-4">
@@ -129,10 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['role'])) {
 
     <!-- Display Error Message for Employee -->
     <?php
-    if (isset($_SESSION['employee_message'])) {
-        echo "<div class='bg-red-100 text-red-700 p-3 rounded-md mb-4'>{$_SESSION['employee_message']}</div>";
-        unset($_SESSION['employee_message']); // Clear message after displaying
-    }
+        if (isset($_SESSION['employee_message'])) {
+            echo "<div class='bg-red-100 text-red-700 p-3 rounded-md mb-4'>{$_SESSION['employee_message']}</div>";
+            unset($_SESSION['employee_message']); // Clear message after displaying
+        }
     ?>
 
     <form method="POST" class="space-y-4">

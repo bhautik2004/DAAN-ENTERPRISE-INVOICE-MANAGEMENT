@@ -1,10 +1,10 @@
 <?php include 'header.php'; ?>
 <?php include 'head.php'; ?>
 <?php
-if ($_SESSION['role'] != "Admin") {
-    header("Location: index.php");
-    exit();
-}
+    if ($_SESSION['role'] != "Admin") {
+        header("Location: index.php");
+        exit();
+    }
 ?>
 <body class="bg-gray-100 flex">
     <?php include 'sidebar.php'; ?>
@@ -12,18 +12,18 @@ if ($_SESSION['role'] != "Admin") {
         <h2 class="text-2xl font-bold text-[var(--primary-color)] mb-4 text-center">Distributors List</h2>
 
         <?php
-        include 'db.php';
+            include 'db.php';
 
-        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-        $sql = "SELECT id, customer_id, distributer_name, distributer_address, mobile, email, note, status 
-                FROM distributors 
+            $sql = "SELECT id, customer_id, distributer_name, distributer_address, mobile, email, note, status
+                FROM distributors
                 WHERE distributer_name LIKE ? OR customer_id LIKE ?";
-        $stmt = $conn->prepare($sql);
-        $searchTerm = "%$search%";
-        $stmt->bind_param("ss", $searchTerm, $searchTerm);
-        $stmt->execute();
-        $result = $stmt->get_result();
+            $stmt       = $conn->prepare($sql);
+            $searchTerm = "%$search%";
+            $stmt->bind_param("ss", $searchTerm, $searchTerm);
+            $stmt->execute();
+            $result = $stmt->get_result();
         ?>
 
         <form method="GET" class="mb-4 flex">
@@ -50,7 +50,7 @@ if ($_SESSION['role'] != "Admin") {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = $result->fetch_assoc()) : ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
                     <tr class="text-center" id="row-<?php echo $row['id']; ?>">
                         <td class="p-2 border"><?php echo $row['id']; ?></td>
                         <td class="p-2 border">
@@ -104,8 +104,8 @@ if ($_SESSION['role'] != "Admin") {
                                 <?php echo ucfirst($row['status']); ?>
                             </span>
                             <select id="status-edit-<?php echo $row['id']; ?>" class="w-full p-1 border border-gray-300 hidden">
-                                <option value="active" <?php echo $row['status'] == 'active' ? 'selected' : ''; ?>>Active</option>
-                                <option value="inactive" <?php echo $row['status'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                                <option value="active"                                                       <?php echo $row['status'] == 'active' ? 'selected' : ''; ?>>Active</option>
+                                <option value="inactive"                                                         <?php echo $row['status'] == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
                             </select>
                         </td>
                         <td class="p-2 border flex justify-center space-x-2">
@@ -140,7 +140,7 @@ if ($_SESSION['role'] != "Admin") {
             document.getElementById(`email-display-${id}`).classList.add('hidden');
             document.getElementById(`note-display-${id}`).classList.add('hidden');
             document.getElementById(`status-display-${id}`).classList.add('hidden');
-            
+
             // Show edit inputs
             document.getElementById(`customer_id-edit-${id}`).classList.remove('hidden');
             document.getElementById(`name-edit-${id}`).classList.remove('hidden');
@@ -149,7 +149,7 @@ if ($_SESSION['role'] != "Admin") {
             document.getElementById(`email-edit-${id}`).classList.remove('hidden');
             document.getElementById(`note-edit-${id}`).classList.remove('hidden');
             document.getElementById(`status-edit-${id}`).classList.remove('hidden');
-            
+
             // Toggle buttons
             document.querySelector(`#row-${id} button.bg-blue-500`).classList.add('hidden');
             document.getElementById(`save-btn-${id}`).classList.remove('hidden');

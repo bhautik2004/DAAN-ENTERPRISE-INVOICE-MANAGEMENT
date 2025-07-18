@@ -1,7 +1,7 @@
 <?php
 include 'db.php'; // Database connection
 
-$type = $_GET['type']; // 'village', 'district', or 'sub_district'
+$type  = $_GET['type'];  // 'village', 'district', or 'sub_district'
 $query = $_GET['query']; // User input
 
 $suggestions = [];
@@ -27,4 +27,3 @@ echo json_encode(['suggestions' => $suggestions]);
 
 $stmt->close();
 $conn->close();
-?>

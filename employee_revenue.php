@@ -1,40 +1,40 @@
 <?php
-include 'db.php'; // Database Connection
+    include 'db.php'; // Database Connection
 
-// Ensure employee is logged in
-if (!isset($_SESSION['user'])) {
-    die("Access Denied");
-}
-$employee_name = $_SESSION['user'];
+    // Ensure employee is logged in
+    if (! isset($_SESSION['user'])) {
+        die("Access Denied");
+    }
+    $employee_name = $_SESSION['user'];
 
-// Fetch filter parameter
-$date_condition = "";
-if (!empty($_GET['selected_date'])) {
-    $selected_date = $_GET['selected_date'];
-    $date_condition = "AND DATE(created_at) = '$selected_date'";
-}
+    // Fetch filter parameter
+    $date_condition = "";
+    if (! empty($_GET['selected_date'])) {
+        $selected_date  = $_GET['selected_date'];
+        $date_condition = "AND DATE(created_at) = '$selected_date'";
+    }
 
-// Calculate revenues
-$monthly_sql = "SELECT SUM(total_amount) as monthly_revenue FROM invoices WHERE status='Completed' 
+    // Calculate revenues
+    $monthly_sql = "SELECT SUM(total_amount) as monthly_revenue FROM invoices WHERE status='Completed'
                 AND MONTH(created_at) = MONTH(CURRENT_DATE()) AND employee_name = '$employee_name'";
-$monthly_result = $conn->query($monthly_sql);
-$monthly_revenue = $monthly_result->fetch_assoc()['monthly_revenue'] ?? 0;
+    $monthly_result  = $conn->query($monthly_sql);
+    $monthly_revenue = $monthly_result->fetch_assoc()['monthly_revenue'] ?? 0;
 
-$last_month_sql = "SELECT SUM(total_amount) as last_month_revenue FROM invoices WHERE status='Completed' 
+    $last_month_sql = "SELECT SUM(total_amount) as last_month_revenue FROM invoices WHERE status='Completed'
                     AND MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) AND employee_name = '$employee_name'";
-$last_month_result = $conn->query($last_month_sql);
-$last_month_revenue = $last_month_result->fetch_assoc()['last_month_revenue'] ?? 0;
+    $last_month_result  = $conn->query($last_month_sql);
+    $last_month_revenue = $last_month_result->fetch_assoc()['last_month_revenue'] ?? 0;
 
-$today_sql = "SELECT SUM(total_amount) as today_revenue FROM invoices WHERE status='Completed' 
+    $today_sql = "SELECT SUM(total_amount) as today_revenue FROM invoices WHERE status='Completed'
               AND DATE(created_at) = CURDATE() AND employee_name = '$employee_name'";
-$today_result = $conn->query($today_sql);
-$today_revenue = $today_result->fetch_assoc()['today_revenue'] ?? 0;
+    $today_result  = $conn->query($today_sql);
+    $today_revenue = $today_result->fetch_assoc()['today_revenue'] ?? 0;
 
-// Fetch revenue for selected date
-$emp_sql = "SELECT DATE(created_at) as invoice_date, COALESCE(SUM(total_amount), 0) AS daily_revenue 
-            FROM invoices WHERE status='Completed' AND employee_name = '$employee_name' $date_condition 
+    // Fetch revenue for selected date
+    $emp_sql = "SELECT DATE(created_at) as invoice_date, COALESCE(SUM(total_amount), 0) AS daily_revenue
+            FROM invoices WHERE status='Completed' AND employee_name = '$employee_name' $date_condition
             GROUP BY invoice_date ORDER BY invoice_date DESC";
-$emp_result = $conn->query($emp_sql);
+    $emp_result = $conn->query($emp_sql);
 ?>
 
 <div class="p-6 bg-white rounded-lg shadow-md mt-4">
@@ -80,7 +80,8 @@ $emp_result = $conn->query($emp_sql);
                 <?php while ($row = $emp_result->fetch_assoc()): ?>
                 <tr class="border-b">
                     <td class="py-2 px-6"><?php echo date('d-m-Y', strtotime($row['invoice_date'])); ?></td>
-                    <td class="py-2 px-6 font-semibold text-gray-800">₹ <?php echo number_format($row['daily_revenue']); ?></td>
+                    <td class="py-2 px-6 font-semibold text-gray-800">₹
+                        <?php echo number_format($row['daily_revenue']); ?></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>

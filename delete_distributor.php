@@ -3,7 +3,7 @@ include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];
-    
+
     $stmt = $conn->prepare("DELETE FROM distributors WHERE id = ?");
     $stmt->bind_param("i", $id);
 
@@ -15,4 +15,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 }
 $conn->close();
-?>
