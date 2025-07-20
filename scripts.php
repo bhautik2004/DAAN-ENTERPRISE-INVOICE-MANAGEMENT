@@ -133,26 +133,7 @@ document.getElementById('toggleSidebar').addEventListener('click', function() {
 });
 
 
-async function checkPincode() {
-    const pincode = document.getElementById('pincode').value;
 
-    if (pincode) {
-        try {
-            const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-            const data = await response.json();
-
-            if (data[0].Status === "Success") {
-                alert('Valid Pincode');
-            } else {
-                alert('Invalid Pincode. Please enter a correct one.');
-            }
-        } catch (error) {
-            alert('Error fetching pincode data. Please try again.');
-        }
-    } else {
-        alert('Please enter a pincode.');
-    }
-}
 
 function formatDate(dateString) {
     let date = new Date(dateString);

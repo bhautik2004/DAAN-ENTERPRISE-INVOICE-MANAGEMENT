@@ -590,6 +590,27 @@
             // You can update a total display element here if you add one
         }
     });
+    async function checkPincode() {
+        const pincode = document.getElementById('pincode').value;
+
+        if (pincode) {
+            try {
+                const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+                const data = await response.json();
+
+                if (data[0].Status === "Success") {
+                    alert('Valid Pincode');
+                } else {
+                    alert('Invalid Pincode. Please enter a correct one.');
+                }
+            } catch (error) {
+                alert('Error fetching pincode data. Please try again.');
+            }
+        } else {
+            alert('Please enter a pincode.');
+        }
+    }
+
     </script>
 
     <?php
