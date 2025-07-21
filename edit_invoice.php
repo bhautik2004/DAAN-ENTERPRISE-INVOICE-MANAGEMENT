@@ -238,6 +238,8 @@
                             Pending</option>
                         <option value="Completed" <?php echo $invoice['status'] === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
+                        <option value="InComplete" <?php echo $invoice['status'] === 'InComplete' ? 'selected' : ''; ?>>
+                            InComplete</option>
                         <option value="Canceled" <?php echo $invoice['status'] === 'Canceled' ? 'selected' : ''; ?>>
                             Canceled</option>
                         <option value="Returned" <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
@@ -245,6 +247,9 @@
                         <option value="Dispatched" <?php echo $invoice['status'] === 'Dispatched' ? 'selected' : ''; ?>>
                             Dispatched
                         </option>
+                        <option value="Deleay" <?php echo $invoice['status'] === 'Deleay' ? 'Deleay' : ''; ?>>
+                            Deleay
+                        </option> 
                     </select>
                 </div>
 

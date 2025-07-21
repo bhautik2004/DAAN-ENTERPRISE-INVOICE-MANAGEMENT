@@ -68,7 +68,7 @@
 
         <?php
             // Search and pagination logic
-            $limit = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 10;
+            $limit         = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
             $page          = isset($_GET['page']) ? (int) $_GET['page'] : 1;
             $start         = ($page - 1) * $limit;
             $search        = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -92,12 +92,13 @@
             }
 
             if (! empty($search)) {
-                $conditions[] = "(full_name LIKE ? OR mobile LIKE ? OR barcode_number LIKE ? OR customer_id LIKE ?)";
-                $paramTypes .= 'ssss'; // Added one more 's' for customer_id
+                $conditions[] = "(full_name LIKE ? OR mobile LIKE ? OR mobile2 LIKE ? OR barcode_number LIKE ? OR customer_id LIKE ?)";
+                $paramTypes .= 'sssss'; // Added one more 's' for mobile2
                 $paramValues[] = "%$search%";
                 $paramValues[] = "%$search%";
+                $paramValues[] = "%$search%"; // Added for mobile2
                 $paramValues[] = "%$search%";
-                $paramValues[] = "%$search%"; // Added for customer_id
+                $paramValues[] = "%$search%";
             }
             if (! empty($status_filter)) {
                 $conditions[] = "status = ?";
@@ -161,7 +162,7 @@
 
         <!-- Search Form -->
         <form method="GET" class="mb-4 flex">
-            <input type="text" name="search" placeholder="Search by Name, Mobile, Barcode or Customer Id ..."
+            <input type="text" name="search" placeholder="Search by Name, Mobile, Mobile2, Barcode or Customer Id ..."
                 class="w-full p-2 ml-2 border border-gray-300 rounded-l-md"
                 value="<?php echo htmlspecialchars($search); ?>">
             <button type="submit" class="bg-[var(--primary-color)] text-white px-2 py-2 rounded-r-md">
@@ -203,12 +204,17 @@
                         </option>
                         <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
+                        <option value="InComplete" <?php echo $status_filter === 'InComplete' ? 'selected' : ''; ?>>
+                            InComplete</option>
                         <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
                         </option>
                         <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
                         <option value="Dispatched" <?php echo $status_filter === 'Dispatched' ? 'selected' : ''; ?>>
                             Dispatched
+                        </option>
+                        <option value="Deleay" <?php echo $status_filter === 'Deleay' ? 'selected' : ''; ?>>
+                            Deleay
                         </option>
                     </select>
 
@@ -223,38 +229,38 @@
                 </form>
 
                 <table class="w-full min-w-[900px] border-collapse border border-gray-300 text-sm">
-                    <thead class="bg-gray-200 sticky top-0 z-10">
-                        <tr class="whitespace-nowrap text-left">
-                            <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
-                            <th class="p-2 border min-w-[150px] text-center bg-gray-200">Actions</th>
-                            <th class="p-2 border min-w-[200px] bg-gray-200">Status</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
-                            <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
-                            <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
-                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
-                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
-                            <th class="p-2 border min-w-[80px] bg-gray-200">Pincode</th>
-                            <th class="p-2 border min-w-[120px] bg-gray-200">District</th>
-                            <th class="p-2 border min-w-[120px] bg-gray-200">Sub District</th>
-                            <th class="p-2 border min-w-[120px] bg-gray-200">Village</th>
-                            <th class="p-2 border min-w-[350px] bg-gray-200">Products</th>
-                            <th class="p-2 border min-w-[120px] bg-gray-200">Employee</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Total</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Adv. Payment</th>
-                            <th class="p-2 border min-w-[100px] bg-gray-200">Repeated Order</th>
-
-                            <th class="p-2 border min-w-[140px] bg-gray-200">Created At</th>
-                        </tr>
-                    </thead>
+                   <thead class="bg-gray-200 sticky top-0 z-10">
+    <tr class="whitespace-nowrap text-left">
+        <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
+        <th class="p-2 border min-w-[180px] text-center bg-gray-200">Actions</th>
+        <th class="p-2 border min-w-[200px] bg-gray-200">Status</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Mobile2</th>
+        <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
+        <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
+        <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
+        <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
+        <th class="p-2 border min-w-[80px] bg-gray-200">Pincode</th>
+        <th class="p-2 border min-w-[120px] bg-gray-200">District</th>
+        <th class="p-2 border min-w-[120px] bg-gray-200">Sub District</th>
+        <th class="p-2 border min-w-[120px] bg-gray-200">Village</th>
+        <th class="p-2 border min-w-[350px] bg-gray-200">Products</th>
+        <th class="p-2 border min-w-[120px] bg-gray-200">Employee</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Total</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Adv. Payment</th>
+        <th class="p-2 border min-w-[100px] bg-gray-200">Repeated Order</th>
+        <th class="p-2 border min-w-[140px] bg-gray-200">Created At</th>
+    </tr>
+</thead>
                     <tbody class="divide-y divide-gray-300">
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
                                 $items_sql = "SELECT ii.*, p.product_name, p.price,p.weight,p.sku
-					                                         FROM invoice_items ii
-					                                         JOIN products p ON ii.product_id = p.id
-					                                         WHERE ii.invoice_id = ?";
+						                                         FROM invoice_items ii
+						                                         JOIN products p ON ii.product_id = p.id
+						                                         WHERE ii.invoice_id = ?";
                                 $items_stmt = $conn->prepare($items_sql);
                                 $items_stmt->bind_param("i", $row['id']);
                                 $items_stmt->execute();
@@ -289,11 +295,16 @@
                                 </form>
                                 <button type="button" class="bg-blue-500 text-white px-3 py-1 text-xs rounded"
                                     onclick='printInvoice(<?php echo json_encode($row); ?>)'>Print</button>
+
                                 <?php endif; ?>
+                                <a href="createinvoice.php?clone_id=<?php echo $row['id']; ?>"
+                                    class="bg-purple-500 text-white px-3 py-1 text-xs rounded">Clone</a>
+
                             </td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['status']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['id']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile']); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['mobile2']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['full_name']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['barcode_number']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['customer_id'] ?? ''); ?></td>
@@ -363,7 +374,7 @@
 
             for ($i = $start_page; $i <= $end_page; $i++): ?>
             <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status_filter=<?php echo urlencode($status_filter); ?>&start_date=<?php echo urlencode($start_date); ?>&end_date=<?php echo urlencode($end_date); ?>"
-                class="px-3 py-1 border rounded                                                                                                                                                                                                                                            <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
+                class="px-3 py-1 border rounded                                                                                                                                                                                                                                                                                           <?php echo($i == $page) ? 'bg-gray-300 font-bold' : 'bg-white hover:bg-gray-100'; ?>">
                 <?php echo $i; ?>
             </a>
             <?php endfor;
@@ -413,78 +424,79 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-    const selectAllMode = sessionStorage.getItem('selectAllMode') === 'true';
-    const selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
-    
-    document.getElementById('select-all').checked = selectAllMode;
-    
-    if (selectAllMode) {
-        // In select-all mode, check all checkboxes except those manually unchecked
-        const uncheckedIds = selectedIds; // In this case, selectedIds contains manually unchecked IDs
-        const checkboxes = document.querySelectorAll('input[name="selected[]"]');
-        
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = !uncheckedIds.includes(checkbox.value);
-        });
-    } else if (selectedIds.length > 0) {
-        // In manual selection mode, check the stored IDs
-        selectedIds.forEach(id => {
-            const checkbox = document.querySelector(`input[name="selected[]"][value="${id}"]`);
-            if (checkbox) checkbox.checked = true;
-        });
-        updateSelectAllCheckbox();
-    }
-});
+        const selectAllMode = sessionStorage.getItem('selectAllMode') === 'true';
+        const selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
+
+        document.getElementById('select-all').checked = selectAllMode;
+
+        if (selectAllMode) {
+            // In select-all mode, check all checkboxes except those manually unchecked
+            const uncheckedIds = selectedIds; // In this case, selectedIds contains manually unchecked IDs
+            const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !uncheckedIds.includes(checkbox.value);
+            });
+        } else if (selectedIds.length > 0) {
+            // In manual selection mode, check the stored IDs
+            selectedIds.forEach(id => {
+                const checkbox = document.querySelector(`input[name="selected[]"][value="${id}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            updateSelectAllCheckbox();
+        }
+    });
     // Select all checkboxes
     document.getElementById('select-all').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('input[name="selected[]"]');
-    const isSelectAll = this.checked;
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = isSelectAll;
-    });
-    
-    // Store the selection state
-    if (isSelectAll) {
-        // When selecting all, store a special flag
-        sessionStorage.setItem('selectAllMode', 'true');
-        sessionStorage.removeItem('selectedInvoiceIds');
-    } else {
-        // When deselecting all, clear everything
-        sessionStorage.removeItem('selectAllMode');
-        sessionStorage.removeItem('selectedInvoiceIds');
-    }
-});
-   document.addEventListener('change', function(e) {
-    if (e.target && e.target.name === 'selected[]') {
-        // If we're in select-all mode and one is unchecked, switch to manual mode
-        if (sessionStorage.getItem('selectAllMode') === 'true' && !e.target.checked) {
+        const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+        const isSelectAll = this.checked;
+
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = isSelectAll;
+        });
+
+        // Store the selection state
+        if (isSelectAll) {
+            // When selecting all, store a special flag
+            sessionStorage.setItem('selectAllMode', 'true');
+            sessionStorage.removeItem('selectedInvoiceIds');
+        } else {
+            // When deselecting all, clear everything
             sessionStorage.removeItem('selectAllMode');
-            
-            // Get all currently checked checkboxes
-            const checkedBoxes = document.querySelectorAll('input[name="selected[]"]:checked');
-            const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
-            
-            sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
+            sessionStorage.removeItem('selectedInvoiceIds');
         }
-        // If not in select-all mode, update the selection normally
-        else if (sessionStorage.getItem('selectAllMode') !== 'true') {
-            let selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
-            
-            if (e.target.checked) {
-                if (!selectedIds.includes(e.target.value)) {
-                    selectedIds.push(e.target.value);
-                }
-            } else {
-                selectedIds = selectedIds.filter(id => id !== e.target.value);
+    });
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.name === 'selected[]') {
+            // If we're in select-all mode and one is unchecked, switch to manual mode
+            if (sessionStorage.getItem('selectAllMode') === 'true' && !e.target.checked) {
+                sessionStorage.removeItem('selectAllMode');
+
+                // Get all currently checked checkboxes
+                const checkedBoxes = document.querySelectorAll('input[name="selected[]"]:checked');
+                const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+                sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
             }
-            
-            sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
+            // If not in select-all mode, update the selection normally
+            else if (sessionStorage.getItem('selectAllMode') !== 'true') {
+                let selectedIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
+
+                if (e.target.checked) {
+                    if (!selectedIds.includes(e.target.value)) {
+                        selectedIds.push(e.target.value);
+                    }
+                } else {
+                    selectedIds = selectedIds.filter(id => id !== e.target.value);
+                }
+
+                sessionStorage.setItem('selectedInvoiceIds', JSON.stringify(selectedIds));
+            }
+
+            updateSelectAllCheckbox();
         }
-        
-        updateSelectAllCheckbox();
-    }
-});
+    });
+
     function updateSelectAllCheckbox() {
         const checkboxes = document.querySelectorAll('input[name="selected[]"]');
         const selectAll = document.getElementById('select-all');

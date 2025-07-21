@@ -109,6 +109,26 @@
         }
     }
 ?>
+<?php
+// At the top of createinvoice.php, after database connection
+$is_repeated_order = "no"; // Default value
+$prefilled_data = [];
+
+// Handle clone request
+if (isset($_GET['clone_id'])) {
+    $clone_id = $_GET['clone_id'];
+    $query = "SELECT * FROM invoices WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $clone_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $prefilled_data = $result->fetch_assoc();
+        $is_repeated_order = "yes"; // Mark as repeated order
+    }
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -310,6 +330,7 @@
                         <label class="block text-sm font-semibold mb-1">Full Name</label>
                         <input type="text" id="fullName" name="full_name"
                             class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value="<?php echo isset($prefilled_data['full_name']) ? htmlspecialchars($prefilled_data['full_name']) : ''; ?>"
                             required>
                     </div>
                     <div>
@@ -317,26 +338,28 @@
                         <div class="relative">
                             <input type="text" id="village" name="village"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
+                                value="<?php echo isset($prefilled_data['village']) ? htmlspecialchars($prefilled_data['village']) : ''; ?>">
                             <div id="village-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Address 1</label>
                         <input type="text" id="address1" name="address1"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value="<?php echo isset($prefilled_data['address1']) ? htmlspecialchars($prefilled_data['address1']) : ''; ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Address 2</label>
                         <input type="text" id="address2" name="address2"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value="<?php echo isset($prefilled_data['address2']) ? htmlspecialchars($prefilled_data['address2']) : ''; ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Post</label>
                         <div class="relative">
                             <input type="text" id="post_name" name="post_name"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
+                                value="<?php echo isset($prefilled_data['post_name']) ? htmlspecialchars($prefilled_data['post_name']) : ''; ?>">
                         </div>
                     </div>
                     <div>
@@ -344,7 +367,7 @@
                         <div class="relative">
                             <input type="text" id="subDistrict" name="sub_district"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
+                                value="<?php echo isset($prefilled_data['sub_district']) ? htmlspecialchars($prefilled_data['sub_district']) : ''; ?>">
                             <div id="sub_district-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>
@@ -353,7 +376,7 @@
                         <div class="relative">
                             <input type="text" id="district" name="district"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
+                                value="<?php echo isset($prefilled_data['district']) ? htmlspecialchars($prefilled_data['district']) : ''; ?>">
                             <div id="district-suggestions" class="suggestion-dropdown"></div>
                         </div>
                     </div>
@@ -363,7 +386,9 @@
                             <input type="text" id="pincode" name="pincode"
                                 class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 pattern="[1-9]{1}[0-9]{5}" maxlength="6"
-                                title="Pincode must be a 6-digit number starting from 1-9" required>
+                                title="Pincode must be a 6-digit number starting from 1-9"
+                                value="<?php echo isset($prefilled_data['pincode']) ? htmlspecialchars($prefilled_data['pincode']) : ''; ?>"
+                                required>
                             <button type="button" onclick="checkPincode()"
                                 class="bg-[var(--primary-color)] hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-200">
                                 Check
@@ -375,14 +400,16 @@
                         <input type="text" id="mobileNumber" name="mobile"
                             class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             pattern="[6-9]{1}[0-9]{9}" required maxlength="10"
-                            title="Mobile number must be 10 digits and start with 6-9">
+                            title="Mobile number must be 10 digits and start with 6-9"
+                            value="<?php echo isset($prefilled_data['mobile']) ? htmlspecialchars($prefilled_data['mobile']) : ''; ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Mobile No 2</label>
                         <input type="text" id="mobile2" name="mobile2"
                             class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             pattern="[6-9]{1}[0-9]{9}" maxlength="10"
-                            title="Mobile number must be 10 digits and start with 6-9">
+                            title="Mobile number must be 10 digits and start with 6-9"
+                            value="<?php echo isset($prefilled_data['mobile2']) ? htmlspecialchars($prefilled_data['mobile2']) : ''; ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Barcode Number</label>
@@ -610,7 +637,6 @@
             alert('Please enter a pincode.');
         }
     }
-
     </script>
 
     <?php

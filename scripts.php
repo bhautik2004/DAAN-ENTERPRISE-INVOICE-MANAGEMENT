@@ -62,9 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <select class="w-full p-1 border" id="status-input-${invoiceId}">
                         <option value="Pending" ${originalValue === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${originalValue === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="InComplete" ${originalValue === 'InComplete' ? 'selected' : ''}>InComplete</option>
                         <option value="Canceled" ${originalValue === 'Canceled' ? 'selected' : ''}>Canceled</option>
                         <option value="Returned" ${originalValue === 'Returned' ? 'selected' : ''}>Returned</option>
                         <option value="Dispatched" ${originalValue === 'Dispatched' ? 'selected' : ''}>Dispatched</option>
+                        <option value="Deleay" ${originalValue === 'Deleay' ? 'selected' : ''}>Deleay</option>
+                        
+                        
                     </select>
                     <button type="submit" class="bg-blue-500 text-white px-2 ml-1">Save</button>
                 </form>
