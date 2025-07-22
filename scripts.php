@@ -1,8 +1,7 @@
 <script>
-// Enable double-click to edit barcode
 document.addEventListener('DOMContentLoaded', function() {
-    const barcodeCells = document.querySelectorAll('td:nth-child(7)'); // 7th column is barcode
-    
+    // Barcode editing
+    const barcodeCells = document.querySelectorAll('td:nth-child(8)'); // 8th column is barcode
     barcodeCells.forEach(cell => {
         cell.addEventListener('dblclick', function() {
             const originalValue = this.textContent.trim();
@@ -17,8 +16,32 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`barcode-input-${invoiceId}`).focus();
         });
     });
-});
 
+    // Status editing
+    const statusCells = document.querySelectorAll('td:nth-child(3)'); // 3rd column is status
+    statusCells.forEach(cell => {
+        cell.addEventListener('dblclick', function() {
+            const originalValue = this.textContent.trim();
+            const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
+            
+            this.innerHTML = `
+                <form class="flex" onsubmit="saveStatus(event, ${invoiceId})">
+                    <select class="w-full p-1 border" id="status-input-${invoiceId}">
+                        <option value="Pending" ${originalValue === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Completed" ${originalValue === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="InComplete" ${originalValue === 'InComplete' ? 'selected' : ''}>InComplete</option>
+                        <option value="Canceled" ${originalValue === 'Canceled' ? 'selected' : ''}>Canceled</option>
+                        <option value="Returned" ${originalValue === 'Returned' ? 'selected' : ''}>Returned</option>
+                        <option value="Dispatched" ${originalValue === 'Dispatched' ? 'selected' : ''}>Dispatched</option>
+                        <option value="Deleay" ${originalValue === 'Deleay' ? 'selected' : ''}>Deleay</option>
+                    </select>
+                    <button type="submit" class="bg-blue-500 text-white px-2 ml-1">Save</button>
+                </form>
+            `;
+            document.getElementById(`status-input-${invoiceId}`).focus();
+        });
+    });
+});
 
 function saveBarcode(event, invoiceId) {
     event.preventDefault();
@@ -48,35 +71,6 @@ function saveBarcode(event, invoiceId) {
         showMessage('Error updating barcode: ' + error, 'error');
     });
 }
-// Enable double-click to edit status
-document.addEventListener('DOMContentLoaded', function() {
-    const statusCells = document.querySelectorAll('td:nth-child(3)'); // 3rd column is status
-    
-    statusCells.forEach(cell => {
-        cell.addEventListener('dblclick', function() {
-            const originalValue = this.textContent.trim();
-            const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
-            
-            this.innerHTML = `
-                <form class="flex" onsubmit="saveStatus(event, ${invoiceId})">
-                    <select class="w-full p-1 border" id="status-input-${invoiceId}">
-                        <option value="Pending" ${originalValue === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Completed" ${originalValue === 'Completed' ? 'selected' : ''}>Completed</option>
-                        <option value="InComplete" ${originalValue === 'InComplete' ? 'selected' : ''}>InComplete</option>
-                        <option value="Canceled" ${originalValue === 'Canceled' ? 'selected' : ''}>Canceled</option>
-                        <option value="Returned" ${originalValue === 'Returned' ? 'selected' : ''}>Returned</option>
-                        <option value="Dispatched" ${originalValue === 'Dispatched' ? 'selected' : ''}>Dispatched</option>
-                        <option value="Deleay" ${originalValue === 'Deleay' ? 'selected' : ''}>Deleay</option>
-                        
-                        
-                    </select>
-                    <button type="submit" class="bg-blue-500 text-white px-2 ml-1">Save</button>
-                </form>
-            `;
-            document.getElementById(`status-input-${invoiceId}`).focus();
-        });
-    });
-});
 
 function saveStatus(event, invoiceId) {
     event.preventDefault();
