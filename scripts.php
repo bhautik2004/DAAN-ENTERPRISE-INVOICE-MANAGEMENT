@@ -1,12 +1,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Barcode editing
+    // Barcode editing - only for admins
+    <?php if ($_SESSION['role'] === 'Admin'): ?>
     const barcodeCells = document.querySelectorAll('td:nth-child(8)'); // 8th column is barcode
     barcodeCells.forEach(cell => {
         cell.addEventListener('dblclick', function() {
             const originalValue = this.textContent.trim();
             const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
-            
+
             this.innerHTML = `
                 <form class="flex" onsubmit="saveBarcode(event, ${invoiceId})">
                     <input type="text" value="${originalValue}" class="w-full p-1 border" id="barcode-input-${invoiceId}">
@@ -16,14 +17,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`barcode-input-${invoiceId}`).focus();
         });
     });
+    <?php endif; ?>
 
-    // Status editing
+    // Status editing - for both employees and admins
     const statusCells = document.querySelectorAll('td:nth-child(3)'); // 3rd column is status
     statusCells.forEach(cell => {
         cell.addEventListener('dblclick', function() {
             const originalValue = this.textContent.trim();
             const invoiceId = this.closest('tr').querySelector('input[name="selected[]"]').value;
-            
+
             this.innerHTML = `
                 <form class="flex" onsubmit="saveStatus(event, ${invoiceId})">
                     <select class="w-full p-1 border" id="status-input-${invoiceId}">
@@ -46,59 +48,59 @@ document.addEventListener('DOMContentLoaded', function() {
 function saveBarcode(event, invoiceId) {
     event.preventDefault();
     const newBarcode = event.target.querySelector('input').value;
-    
+
     fetch('update_barcode.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            invoice_id: invoiceId,
-            barcode: newBarcode
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                invoice_id: invoiceId,
+                barcode: newBarcode
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the cell display
-            event.target.closest('td').textContent = newBarcode;
-            showMessage('Barcode updated successfully!', 'success');
-        } else {
-            showMessage('Error updating barcode: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showMessage('Error updating barcode: ' + error, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the cell display
+                event.target.closest('td').textContent = newBarcode;
+                showMessage('Barcode updated successfully!', 'success');
+            } else {
+                showMessage('Error updating barcode: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error updating barcode: ' + error, 'error');
+        });
 }
 
 function saveStatus(event, invoiceId) {
     event.preventDefault();
     const newStatus = event.target.querySelector('select').value;
-    
+
     fetch('update_status.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            invoice_id: invoiceId,
-            status: newStatus
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                invoice_id: invoiceId,
+                status: newStatus
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the cell display
-            event.target.closest('td').textContent = newStatus;
-            showMessage('Status updated successfully!', 'success');
-        } else {
-            showMessage('Error updating status: ' + data.message, 'error');
-        }
-    })
-    .catch(error => {
-        showMessage('Error updating status: ' + error, 'error');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the cell display
+                event.target.closest('td').textContent = newStatus;
+                showMessage('Status updated successfully!', 'success');
+            } else {
+                showMessage('Error updating status: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showMessage('Error updating status: ' + error, 'error');
+        });
 }
 
 document.getElementById('toggleSidebar').addEventListener('click', function() {
@@ -174,36 +176,36 @@ function printInvoice(invoiceData, isMultiUp = false) {
 function printSelectedInvoices(isMultiUp = false) {
     const selectAllMode = sessionStorage.getItem('selectAllMode') === 'true';
     let invoiceIds = [];
-    
+
     if (selectAllMode) {
         // Get all invoice IDs from server (excluding any manually unchecked ones)
         const uncheckedIds = getUncheckedIds();
-        
+
         fetch('get_all_invoice_ids.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                exclude_ids: uncheckedIds,
-                search: '<?php echo addslashes($search); ?>',
-                status_filter: '<?php echo addslashes($status_filter); ?>',
-                start_date: '<?php echo addslashes($start_date); ?>',
-                end_date: '<?php echo addslashes($end_date); ?>'
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    exclude_ids: uncheckedIds,
+                    search: '<?php echo addslashes($search); ?>',
+                    status_filter: '<?php echo addslashes($status_filter); ?>',
+                    start_date: '<?php echo addslashes($start_date); ?>',
+                    end_date: '<?php echo addslashes($end_date); ?>'
+                })
             })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.ids.length === 0) {
-                alert('Please select at least one invoice to print.');
-                return;
-            }
-            proceedWithPrint(data.ids, isMultiUp);
-        })
-        .catch(err => {
-            console.error('Failed to fetch invoice IDs:', err);
-            alert('Failed to load invoice IDs. Please try again.');
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.ids.length === 0) {
+                    alert('Please select at least one invoice to print.');
+                    return;
+                }
+                proceedWithPrint(data.ids, isMultiUp);
+            })
+            .catch(err => {
+                console.error('Failed to fetch invoice IDs:', err);
+                alert('Failed to load invoice IDs. Please try again.');
+            });
     } else {
         // Get selected IDs from sessionStorage
         invoiceIds = JSON.parse(sessionStorage.getItem('selectedInvoiceIds') || '[]');
@@ -219,40 +221,43 @@ function getUncheckedIds() {
     const uncheckedBoxes = document.querySelectorAll('input[name="selected[]"]:not(:checked)');
     return Array.from(uncheckedBoxes).map(cb => cb.value);
 }
+
 function proceedWithPrint(invoiceIds, isMultiUp) {
     fetch('get_invoices.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ invoice_ids: invoiceIds })
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch invoices');
-        return res.json();
-    })
-    .then(invoices => {
-        fetch('get_distributor.php')
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch distributor');
-                return res.json();
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                invoice_ids: invoiceIds
             })
-            .then(distributor => {
-                invoices.forEach(invoice => {
-                    invoice.distributor = distributor;
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch invoices');
+            return res.json();
+        })
+        .then(invoices => {
+            fetch('get_distributor.php')
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to fetch distributor');
+                    return res.json();
+                })
+                .then(distributor => {
+                    invoices.forEach(invoice => {
+                        invoice.distributor = distributor;
+                    });
+                    const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
+                    openPrintWindow(htmlContent, isMultiUp);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch distributor:', err);
+                    alert('Failed to load distributor info. Please try again.');
                 });
-                const htmlContent = generatePrintPageHtml(invoices, isMultiUp);
-                openPrintWindow(htmlContent, isMultiUp);
-            })
-            .catch(err => {
-                console.error('Failed to fetch distributor:', err);
-                alert('Failed to load distributor info. Please try again.');
-            });
-    })
-    .catch(err => {
-        console.error('Failed to fetch invoices:', err);
-        alert('Failed to load selected invoices. Please try again.');
-    });
+        })
+        .catch(err => {
+            console.error('Failed to fetch invoices:', err);
+            alert('Failed to load selected invoices. Please try again.');
+        });
 }
 
 // Common function to open print window
@@ -426,7 +431,7 @@ function generatePrintPageHtml(invoices, isMultiUp = false) {
 function getItemRowStyle(itemCount, tableClass, isMultiUp = false) {
     let baseSize = isMultiUp ? 20 : 25; // Increased base font size
     let padding = isMultiUp ? '3px' : '4px'; // Increased padding
-    
+
     if (itemCount > 4 && itemCount <= 6) {
         return `
             .${tableClass}{
@@ -500,10 +505,10 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table',
     const distributor = invoiceData.distributor || {};
     const {
         distributer_name = '',
-        distributer_address = '',
-        mobile: dist_mobile = '',
-        email: dist_email = '',
-        note: dist_note = ''
+            distributer_address = '',
+            mobile: dist_mobile = '',
+            email: dist_email = '',
+            note: dist_note = ''
     } = distributor;
 
     if (typeof invoiceData === 'string') {
@@ -517,16 +522,16 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table',
 
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
-        sub_district = '', post_name = '', mobile = '', mobile2 = '',
-        pincode = '', total_amount = 0, advanced_payment = 0,
-        customer_id = 0,
-        employee_name = '', created_at = '', id = '', invoice_items = []
+            sub_district = '', post_name = '', mobile = '', mobile2 = '',
+            pincode = '', total_amount = 0, advanced_payment = 0,
+            customer_id = 0,
+            employee_name = '', created_at = '', id = '', invoice_items = []
     } = invoiceData;
 
     const codAmount = total_amount;
     const orderDate = new Date(created_at).toLocaleDateString('en-GB');
 
-     function numberToWords(num) {
+    function numberToWords(num) {
         const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
             'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
         ];
@@ -539,7 +544,8 @@ function generateSingleInvoiceHTML(invoiceData, itemsTableClass = 'items-table',
             if (n < 20) return ones[n];
             const digit = n % 10;
             if (n < 100) return tens[Math.floor(n / 10)] + (digit ? ' ' + ones[digit] : '');
-            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convertLessThanOneThousand(n % 100) : '');
+            return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convertLessThanOneThousand(n % 100) :
+                '');
         }
 
         let result = '';
@@ -662,47 +668,50 @@ function printMahavirCourierInvoices() {
     const invoiceIds = Array.from(selectedCheckboxes).map(cb => cb.value);
 
     fetch('get_invoices.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ invoice_ids: invoiceIds })
-    })
-    .then(res => {
-        if (!res.ok) {
-            throw new Error('Failed to fetch invoices');
-        }
-        return res.json();
-    })
-    .then(invoices => {
-        // First fetch distributor info
-        fetch('get_distributor.php')
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to fetch distributor');
-                }
-                return res.json();
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                invoice_ids: invoiceIds
             })
-            .then(distributor => {
-                // Add distributor to each invoice
-                invoices.forEach(invoice => {
-                    invoice.distributor = distributor;
-                });
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to fetch invoices');
+            }
+            return res.json();
+        })
+        .then(invoices => {
+            // First fetch distributor info
+            fetch('get_distributor.php')
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Failed to fetch distributor');
+                    }
+                    return res.json();
+                })
+                .then(distributor => {
+                    // Add distributor to each invoice
+                    invoices.forEach(invoice => {
+                        invoice.distributor = distributor;
+                    });
 
-                // Generate the HTML for all invoices
-                const htmlContent = generateMahavirPrintPageHtml(invoices);
-                openPrintWindow(htmlContent);
-            })
-            .catch(err => {
-                console.error('Failed to fetch distributor:', err);
-                alert('Failed to load distributor info. Please try again.');
-            });
-    })
-    .catch(err => {
-        console.error('Failed to fetch invoices:', err);
-        alert('Failed to load selected invoices. Please try again.');
-    });
+                    // Generate the HTML for all invoices
+                    const htmlContent = generateMahavirPrintPageHtml(invoices);
+                    openPrintWindow(htmlContent);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch distributor:', err);
+                    alert('Failed to load distributor info. Please try again.');
+                });
+        })
+        .catch(err => {
+            console.error('Failed to fetch invoices:', err);
+            alert('Failed to load selected invoices. Please try again.');
+        });
 }
+
 function generateMahavirPrintPageHtml(invoices) {
     // Generate CSS that will apply to all invoices
     const commonCSS = `
@@ -812,10 +821,10 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
     const distributor = invoiceData.distributor || {};
     const {
         distributer_name = '',
-        distributer_address = '',
-        mobile: dist_mobile = '',
-        email: dist_email = '',
-        note: dist_note = ''
+            distributer_address = '',
+            mobile: dist_mobile = '',
+            email: dist_email = '',
+            note: dist_note = ''
     } = distributor;
 
     if (typeof invoiceData === 'string') {
@@ -829,10 +838,10 @@ function generateMahavirInvoiceHTML(invoiceData, itemsTableClass = 'items-table'
 
     const {
         full_name = '', address1 = '', address2 = '', village = '', district = '',
-        sub_district = '', post_name = '', mobile = '', mobile2 = '',
-        pincode = '', total_amount = 0, advanced_payment = 0,
-        customer_id = 0,
-        employee_name = '', created_at = '', id = '', invoice_items = []
+            sub_district = '', post_name = '', mobile = '', mobile2 = '',
+            pincode = '', total_amount = 0, advanced_payment = 0,
+            customer_id = 0,
+            employee_name = '', created_at = '', id = '', invoice_items = []
     } = invoiceData;
 
     const orderDate = new Date(created_at).toLocaleDateString('en-GB');

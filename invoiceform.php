@@ -413,8 +413,16 @@ if (isset($_GET['clone_id'])) {
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Barcode Number</label>
+                        <?php if ($_SESSION['role'] === 'Admin'): ?>
                         <input type="text" name="barcode_number"
-                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value="<?php echo isset($prefilled_data['barcode_number']) ? htmlspecialchars($prefilled_data['barcode_number']) : ''; ?>">
+                        <?php else: ?>
+                        <input type="text" name="barcode_number"
+                            class="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                            value="<?php echo isset($prefilled_data['barcode_number']) ? htmlspecialchars($prefilled_data['barcode_number']) : ''; ?>"
+                            readonly>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Customer ID</label>

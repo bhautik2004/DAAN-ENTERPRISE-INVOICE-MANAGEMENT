@@ -225,10 +225,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Barcode Number*</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Barcode Number</label>
+                    <?php if ($_SESSION['role'] === 'Admin'): ?>
                     <input type="text" name="barcode_number"
                         value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>"
                         class="w-full p-2 border border-gray-300 rounded-md">
+                    <?php else: ?>
+                    <input type="text" value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>"
+                        class="w-full p-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                    <input type="hidden" name="barcode_number"
+                        value="<?php echo htmlspecialchars($invoice['barcode_number']); ?>">
+                    <?php endif; ?>
                 </div>
 
                 <div class="form-group">
@@ -249,7 +256,7 @@
                         </option>
                         <option value="Deleay" <?php echo $invoice['status'] === 'Deleay' ? 'Deleay' : ''; ?>>
                             Deleay
-                        </option> 
+                        </option>
                     </select>
                 </div>
 
