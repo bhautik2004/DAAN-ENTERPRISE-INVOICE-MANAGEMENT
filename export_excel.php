@@ -13,7 +13,7 @@ $output = fopen("php://output", "w");
 // Add UTF-8 BOM for proper encoding
 fwrite($output, "\xEF\xBB\xBF");
 
-// Excel header with styling (removed City and Pincode columns)
+// Excel header with styling (added new columns at the end)
 $header = "<table border='1'>
     <tr style='background-color: #f2f2f2; font-weight: bold;'>
         <th width='50'>SL</th>
@@ -36,6 +36,9 @@ $header = "<table border='1'>
         <th width='200'>L</th>
         <th width='200'>B</th>
         <th width='200'>H</th>
+        <th width='120'>Created By</th>
+        <th width='100'>Status</th>
+        <th width='120'>Repeat Order</th>
     </tr>";
 
 fwrite($output, $header);
@@ -44,7 +47,7 @@ fwrite($output, $header);
 $from_date = $_POST['from_date'] ?? '';
 $to_date   = $_POST['to_date'] ?? '';
 
-if (! empty($from_date) && ! empty($to_date)) {
+if (!empty($from_date) && !empty($to_date)) {
     $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile
                            FROM invoices i
                            LEFT JOIN distributors d ON i.customer_id = d.customer_id
@@ -78,7 +81,7 @@ while ($row = $result->fetch_assoc()) {
     // Format the date (only date, no time)
     $formatted_date = date('d-m-Y', strtotime($row['created_at']));
 
-    // Prepare data (removed City and Pincode columns)
+    // Prepare data (added new columns at the end)
     $data = [
         $serial, // SL (A)
         htmlspecialchars($formatted_date),
@@ -100,6 +103,9 @@ while ($row = $result->fetch_assoc()) {
         '10',
         '10',
         '5',
+        htmlspecialchars($row['employee_name'] ?? 'N/A'), // Created By
+        htmlspecialchars($row['status'] ?? ''), // Status
+        htmlspecialchars($row['is_repeated_order'] == 'yes' ? 'Yes' : 'No') // Repeat Order
     ];
 
     // Write row to Excel
@@ -117,3 +123,4 @@ fwrite($output, "</table>");
 
 fclose($output);
 exit;
+?>

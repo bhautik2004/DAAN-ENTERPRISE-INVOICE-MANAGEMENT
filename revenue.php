@@ -12,26 +12,45 @@
         <h2 class="text-2xl font-bold text-[var(--primary-color)] mb-4 text-center">Revenue Report</h2>
 
         <?php
+            // Status conditions
+            $completed_status = "('Completed', 'Dispatched')";
+            $pending_status = "('Dispatched')";
+            
             // Fetch revenue data that's always shown
-            $revenue_sql    = "SELECT SUM(total_amount) as total_revenue FROM invoices WHERE status='Completed'";
+            $revenue_sql    = "SELECT SUM(total_amount) as total_revenue FROM invoices WHERE status IN $completed_status";
             $revenue_result = $conn->query($revenue_sql);
             $total_revenue  = $revenue_result->fetch_assoc()['total_revenue'] ?? 0;
 
-            $today_sql     = "SELECT SUM(total_amount) as today_revenue FROM invoices WHERE status='Completed' AND DATE(created_at) = CURDATE()";
+            $today_sql     = "SELECT SUM(total_amount) as today_revenue FROM invoices WHERE status IN $completed_status AND DATE(created_at) = CURDATE()";
             $today_result  = $conn->query($today_sql);
             $today_revenue = $today_result->fetch_assoc()['today_revenue'] ?? 0;
 
-            $monthly_sql     = "SELECT SUM(total_amount) as monthly_revenue FROM invoices WHERE status='Completed' AND MONTH(created_at) = MONTH(CURRENT_DATE())";
-            $monthly_result  = $conn->query($monthly_sql);
-            $monthly_revenue = $monthly_result->fetch_assoc()['monthly_revenue'] ?? 0;
-
-            $last_month_sql     = "SELECT SUM(total_amount) as last_month_revenue FROM invoices WHERE status='Completed' AND MONTH(created_at) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)";
-            $last_month_result  = $conn->query($last_month_sql);
-            $last_month_revenue = $last_month_result->fetch_assoc()['last_month_revenue'] ?? 0;
-
-            $yearly_sql     = "SELECT SUM(total_amount) as yearly_revenue FROM invoices WHERE status='Completed' AND YEAR(created_at) = YEAR(CURRENT_DATE())";
-            $yearly_result  = $conn->query($yearly_sql);
-            $yearly_revenue = $yearly_result->fetch_assoc()['yearly_revenue'] ?? 0;
+            
+            // Pending revenue calculations
+            $pending_revenue_sql = "SELECT SUM(total_amount) as pending_revenue FROM invoices WHERE status IN $pending_status";
+            $pending_result = $conn->query($pending_revenue_sql);
+            $pending_revenue = $pending_result->fetch_assoc()['pending_revenue'] ?? 0;
+            
+            // Order status counts
+            $status_counts_sql = "SELECT 
+                                status, 
+                                COUNT(*) as count,
+                                SUM(total_amount) as amount
+                                FROM invoices 
+                                GROUP BY status";
+            $status_counts_result = $conn->query($status_counts_sql);
+            $status_counts = [];
+            $total_orders = 0;
+            $total_amount_all = 0;
+            
+            while ($row = $status_counts_result->fetch_assoc()) {
+                $status_counts[$row['status']] = [
+                    'count' => $row['count'],
+                    'amount' => $row['amount']
+                ];
+                $total_orders += $row['count'];
+                $total_amount_all += $row['amount'];
+            }
         ?>
 
         <!-- Enhanced Revenue Summary -->
@@ -42,14 +61,14 @@
                 <div class="p-4 bg-green-100 border-l-4 border-green-500 rounded-lg">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="text-lg font-semibold text-green-800">Total Revenue</h3>
+                            <h3 class="text-lg font-semibold text-green-800">Total Revenue (Completed/Dispatched)</h3>
                             <p class="text-xl font-bold text-green-600">₹ <?php echo number_format($total_revenue); ?>
                             </p>
                         </div>
                         <span class="bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">All Time</span>
                     </div>
                     <p class="text-sm text-gray-500 mt-2">Since <?php
-                                                            $first_sale_sql    = "SELECT MIN(created_at) as first_sale FROM invoices WHERE status='Completed'";
+                                                            $first_sale_sql    = "SELECT MIN(created_at) as first_sale FROM invoices WHERE status IN $completed_status";
                                                             $first_sale_result = $conn->query($first_sale_sql);
                                                             $first_sale        = $first_sale_result->fetch_assoc()['first_sale'];
                                                         echo $first_sale ? date('M Y', strtotime($first_sale)) : 'N/A';
@@ -68,12 +87,12 @@
                     </div>
                     <?php
                 $yesterday_sql = "SELECT SUM(total_amount) as revenue FROM invoices
-                            WHERE status='Completed' AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+                            WHERE status IN $completed_status AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
                 $yesterday_result  = $conn->query($yesterday_sql);
                 $yesterday_revenue = $yesterday_result->fetch_assoc()['revenue'] ?? 0;
                 $today_diff        = $today_revenue - $yesterday_revenue;
             ?>
-                    <p class="text-sm mt-2<?php echo $today_diff >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
+                    <p class="text-sm mt-2 <?php echo $today_diff >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
                         <?php
                     if ($yesterday_revenue > 0) {
                         $percent = abs(($today_diff / $yesterday_revenue) * 100);
@@ -85,96 +104,137 @@
                     </p>
                 </div>
 
-                <!-- Current Month Revenue -->
-                <div class="p-4 bg-blue-100 border-l-4 border-blue-500 rounded-lg">
+                <!-- Pending Revenue -->
+                <div class="p-4 bg-orange-100 border-l-4 border-orange-500 rounded-lg">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="text-lg font-semibold text-blue-800">Monthly Revenue</h3>
-                            <p class="text-xl font-bold text-blue-600">₹ <?php echo number_format($monthly_revenue); ?>
-                            </p>
+                            <h3 class="text-lg font-semibold text-orange-800">Pending Revenue</h3>
+                            <p class="text-xl font-bold text-orange-600">₹ <?php echo number_format($pending_revenue); ?></p>
                         </div>
-                        <span
-                            class="bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full"><?php echo date('F Y'); ?></span>
+                        <span class="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded-full">Potential</span>
                     </div>
-                    <?php
-                $month_target   = 0; // You can set your monthly target here or fetch from database
-                $month_progress = $month_target > 0 ? min(($monthly_revenue / $month_target) * 100, 100) : 0;
-            ?>
-                    <div class="mt-2">
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full"
-                                style="width:                                                                            <?php echo $month_progress; ?>%">
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <?php echo number_format($month_progress, 1); ?>% of monthly target
-                            <?php if ($month_target > 0): ?>
-                            (₹<?php echo number_format($month_target); ?>)
-                            <?php endif; ?>
-                        </p>
-                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Dispatched orders</p>
                 </div>
-
-                <!-- Last Month Comparison -->
-                <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-semibold text-yellow-800">Last Month</h3>
-                            <p class="text-xl font-bold text-yellow-600">₹
-                                <?php echo number_format($last_month_revenue); ?></p>
-                        </div>
-                        <span class="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                            <?php echo date('F Y', strtotime('last month')); ?>
-                        </span>
-                    </div>
-                    <?php
-                $month_diff = $monthly_revenue - $last_month_revenue;
-            ?>
-                    <p class="text-sm mt-2<?php echo $month_diff >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
-                        <?php
-                    if ($last_month_revenue > 0) {
-                        $percent = abs(($month_diff / $last_month_revenue) * 100);
-                        echo($month_diff >= 0 ? '↑' : '↓') . ' ' . number_format($percent, 1) . '% from last month';
-                    } else {
-                        echo 'No comparison data';
-                    }
-                ?>
-                    </p>
-                </div>
-
-                <!-- Yearly Revenue -->
-                <div class="p-4 bg-purple-100 border-l-4 border-purple-500 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-semibold text-purple-800">Yearly Revenue</h3>
-                            <p class="text-xl font-bold text-purple-600">₹ <?php echo number_format($yearly_revenue); ?>
-                            </p>
-                        </div>
-                        <span
-                            class="bg-purple-200 text-purple-800 text-xs px-2 py-1 rounded-full"><?php echo date('Y'); ?></span>
-                    </div>
-                    <?php
-                $last_year_sql = "SELECT SUM(total_amount) as revenue FROM invoices
-                             WHERE status='Completed' AND YEAR(created_at) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))";
-                $last_year_result  = $conn->query($last_year_sql);
-                $last_year_revenue = $last_year_result->fetch_assoc()['revenue'] ?? 0;
-                $year_diff         = $yearly_revenue - $last_year_revenue;
-            ?>
-                    <p class="text-sm mt-2<?php echo $year_diff >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
-                        <?php
-                    if ($last_year_revenue > 0) {
-                        $percent = abs(($year_diff / $last_year_revenue) * 100);
-                        echo($year_diff >= 0 ? '↑' : '↓') . ' ' . number_format($percent, 1) . '% from last year';
-                    } else {
-                        echo 'No comparison data';
-                    }
-                ?>
-                    </p>
-                </div>
-
-
             </div>
         </div>
+        
+       <!-- Order Status Summary -->
+<div class="p-6 bg-white rounded-lg shadow-md mt-4">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Order Status Summary</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total Orders -->
+        <div class="p-4 bg-gray-100 border-l-4 border-gray-500 rounded-lg">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Total Orders</h3>
+                    <p class="text-xl font-bold text-gray-600"><?php echo number_format($total_orders); ?></p>
+                </div>
+                <span class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-full">All Statuses</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">Total amount: ₹ <?php echo number_format($total_amount_all); ?></p>
+        </div>
+        
+        <?php 
+        // Define status colors and labels
+        $status_config = [
+            'Completed' => [
+                'label' => 'Completed',
+                'bg' => 'bg-green-100',
+                'border' => 'border-green-500', 
+                'text' => 'text-green-800',
+                'icon' => '✓'
+            ],
+            'Dispatched' => [
+                'label' => 'Dispatched',
+                'bg' => 'bg-blue-100',
+                'border' => 'border-blue-500', 
+                'text' => 'text-blue-800',
+                'icon' => '🚚'
+            ],
+            'Pending' => [
+                'label' => 'Pending',
+                'bg' => 'bg-yellow-100',
+                'border' => 'border-yellow-500', 
+                'text' => 'text-yellow-800',
+                'icon' => '⏳'
+            ],
+            'Incomplete' => [
+                'label' => 'Incomplete',
+                'bg' => 'bg-amber-100',
+                'border' => 'border-amber-500', 
+                'text' => 'text-amber-800',
+                'icon' => '⚠️'
+            ],
+            'Cancelled' => [
+                'label' => 'Cancelled',
+                'bg' => 'bg-red-100',
+                'border' => 'border-red-500', 
+                'text' => 'text-red-800',
+                'icon' => '✗'
+            ],
+            'Returned' => [
+                'label' => 'Returned',
+                'bg' => 'bg-purple-100',
+                'border' => 'border-purple-500', 
+                'text' => 'text-purple-800',
+                'icon' => '↩️'
+            ],
+            'Delay' => [
+                'label' => 'Delayed',
+                'bg' => 'bg-pink-100',
+                'border' => 'border-pink-500', 
+                'text' => 'text-pink-800',
+                'icon' => '⏱️'
+            ]
+        ];
+        
+        // Get counts for all statuses
+        $status_counts_sql = "SELECT 
+                            status, 
+                            COUNT(*) as count,
+                            SUM(total_amount) as amount
+                            FROM invoices 
+                            GROUP BY status
+                            ORDER BY FIELD(status, 'Completed', 'Dispatched', 'Processing', 'Pending', 'Incomplete', 'Delay', 'Cancelled', 'Returned')";
+        $status_counts_result = $conn->query($status_counts_sql);
+        $status_counts = [];
+        $total_orders = 0;
+        $total_amount_all = 0;
+        
+        while ($row = $status_counts_result->fetch_assoc()) {
+            $status_counts[$row['status']] = [
+                'count' => $row['count'],
+                'amount' => $row['amount']
+            ];
+            $total_orders += $row['count'];
+            $total_amount_all += $row['amount'];
+        }
+        
+        // Display each status card
+        foreach ($status_config as $status => $config) {
+            $data = $status_counts[$status] ?? ['count' => 0, 'amount' => 0];
+            $percentage = $total_orders > 0 ? round(($data['count'] / $total_orders) * 100, 1) : 0;
+        ?>
+        <div class="p-4 <?php echo $config['bg']; ?> border-l-4 <?php echo $config['border']; ?> rounded-lg hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg"><?php echo $config['icon']; ?></span>
+                        <h3 class="text-lg font-semibold <?php echo $config['text']; ?>"><?php echo $config['label']; ?></h3>
+                    </div>
+                    <p class="text-xl font-bold <?php echo $config['text']; ?> ml-6"><?php echo number_format($data['count']); ?></p>
+                </div>
+                <span class="<?php echo str_replace('100', '200', $config['bg']); ?> <?php echo $config['text']; ?> text-xs px-2 py-1 rounded-full">
+                    <?php echo $percentage; ?>%
+                </span>
+            </div>
+            <div class="mt-2 ml-6">
+                <p class="text-sm text-gray-600">Amount: ₹ <?php echo number_format($data['amount']); ?></p>
+                
+            </div>
+        </div>
+        <?php } ?>
+    </div>
         <!-- Main Filter Section -->
         <div class="bg-white p-4 rounded-md shadow-md mt-4">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Filter Revenue Data</h2>
@@ -280,7 +340,7 @@
 
                 // Get total revenue for the filtered period
                 $filtered_revenue_sql = "SELECT SUM(total_amount) as filtered_revenue FROM invoices
-                                    WHERE status='Completed' AND $date_condition";
+                                    WHERE status in ('Completed','Dispatched')  AND $date_condition";
                 $filtered_revenue_result = $conn->query($filtered_revenue_sql);
                 $filtered_revenue        = $filtered_revenue_result->fetch_assoc()['filtered_revenue'] ?? 0;
 
@@ -290,7 +350,7 @@
                                 SUM(total_amount) as daily_revenue,
                                 COUNT(*) as order_count
                                 FROM invoices
-                                WHERE status='Completed' AND $date_condition
+                                WHERE status in ('Completed','Dispatched') AND $date_condition
                                 GROUP BY period
                                 ORDER BY period " . ($time_period == 'day' || $time_period == 'month' ? 'ASC' : 'DESC') . "
                                 LIMIT $limit OFFSET $offset";
@@ -299,7 +359,7 @@
 
                 // Get total count for pagination
                 $count_sql = "SELECT COUNT(DISTINCT " . ($time_period == 'year' ? "MONTH(created_at)" : "DATE(created_at)") . ") as total
-                         FROM invoices WHERE status='Completed' AND $date_condition";
+                         FROM invoices WHERE status in ('Completed','Dispatched') AND $date_condition";
                 $count_result  = $conn->query($count_sql);
                 $total_records = $count_result->fetch_assoc()['total'];
                 $total_pages   = ceil($total_records / $limit);
@@ -386,362 +446,387 @@
         </div>
         <?php }?>
 
-        <!-- Employee Revenue Section -->
-        <div class="bg-white p-4 rounded-md shadow-md mt-4">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Employee Revenue</h2>
+<!-- Employee Revenue Section -->
+<div class="bg-white p-4 rounded-md shadow-md mt-4">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Employee Revenue</h2>
 
-            <!-- Employee Daily Revenue -->
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold mb-2">Daily Employee Revenue</h3>
-                <form method="GET" class="mb-4 flex flex-wrap gap-4 items-center">
-                    <input type="date" name="emp_day_date"
-                        value="<?php echo isset($_GET['emp_day_date']) ? $_GET['emp_day_date'] : date('Y-m-d'); ?>"
-                        class="p-2 border rounded-md">
+    <!-- Employee Daily Revenue -->
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold mb-2">Daily Employee Revenue</h3>
+        <form method="GET" class="mb-4 flex flex-wrap gap-4 items-center">
+            <input type="date" name="emp_day_date"
+                value="<?php echo isset($_GET['emp_day_date']) ? $_GET['emp_day_date'] : date('Y-m-d'); ?>"
+                class="p-2 border rounded-md">
 
-                    <select name="emp_day_employee" class="p-2 border rounded-md">
-                        <option value="">All Employees</option>
-                        <?php
-                    $emp_list_sql = "SELECT DISTINCT employee_name FROM invoices WHERE status='Completed' ORDER BY employee_name";
-                    $emp_list_result = $conn->query($emp_list_sql);
-                    while ($emp = $emp_list_result->fetch_assoc()) {
-                        $selected = (isset($_GET['emp_day_employee'])) && $_GET['emp_day_employee'] == $emp['employee_name'] ? 'selected' : '';
-                        echo "<option value='{$emp['employee_name']}' $selected>{$emp['employee_name']}</option>";
-                    }
-                ?>
-                    </select>
-
-                    <button type="submit" class="p-2 bg-blue-500 text-white rounded-md">Filter</button>
-                </form>
-
-                <?php if (isset($_GET['emp_day_date'])): ?>
+            <select name="emp_day_employee" class="p-2 border rounded-md">
+                <option value="">All Employees</option>
                 <?php
-            $emp_day_date = $_GET['emp_day_date'];
-            $emp_day_employee = isset($_GET['emp_day_employee']) ? $_GET['emp_day_employee'] : '';
+                $emp_list_sql = "SELECT DISTINCT employee_name FROM invoices WHERE status in ('Completed','Dispatched','Returned') ORDER BY employee_name";
+                $emp_list_result = $conn->query($emp_list_sql);
+                while ($emp = $emp_list_result->fetch_assoc()) {
+                    $selected = (isset($_GET['emp_day_employee'])) && $_GET['emp_day_employee'] == $emp['employee_name'] ? 'selected' : '';
+                    echo "<option value='{$emp['employee_name']}' $selected>{$emp['employee_name']}</option>";
+                }
+                ?>
+            </select>
 
-            $emp_day_condition = "DATE(created_at) = '$emp_day_date'";
-            if (!empty($emp_day_employee)) {
-                $emp_day_condition .= " AND employee_name = '$emp_day_employee'";
-            }
+            <button type="submit" class="p-2 bg-blue-500 text-white rounded-md">Filter</button>
+        </form>
 
-            // Get totals for this filter
-            $emp_day_total_sql = "SELECT 
-                                SUM(total_amount) as total,
-                                SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                                COUNT(*) as total_orders,
+        <?php if (isset($_GET['emp_day_date'])): ?>
+        <?php
+        $emp_day_date = $_GET['emp_day_date'];
+        $emp_day_employee = isset($_GET['emp_day_employee']) ? $_GET['emp_day_employee'] : '';
+
+        $emp_day_condition = "DATE(created_at) = '$emp_day_date'";
+        if (!empty($emp_day_employee)) {
+            $emp_day_condition .= " AND employee_name = '$emp_day_employee'";
+        }
+
+        // Get totals for this filter - EXCLUDE RETURNED ORDERS FROM TOTAL REVENUE
+        $emp_day_total_sql = "SELECT 
+                            SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as total,
+                            SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                            SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
+                            COUNT(*) as total_orders,
+                            SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
+                            SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                            SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                            SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                            FROM invoices 
+                            WHERE status in ('Completed','Dispatched','Returned') AND $emp_day_condition";
+        $emp_day_total_result = $conn->query($emp_day_total_sql);
+        $emp_day_total_data = $emp_day_total_result->fetch_assoc();
+        
+        $emp_day_total = $emp_day_total_data['total'] ?? 0;
+        $repeated_revenue = $emp_day_total_data['repeated_revenue'] ?? 0;
+        $new_revenue = $emp_day_total_data['new_revenue'] ?? 0;
+        $total_orders = $emp_day_total_data['total_orders'] ?? 0;
+        $repeated_orders = $emp_day_total_data['repeated_orders'] ?? 0;
+        $new_orders = $emp_day_total_data['new_orders'] ?? 0;
+        $returned_amount = $emp_day_total_data['returned_amount'] ?? 0;
+        $returned_orders = $emp_day_total_data['returned_orders'] ?? 0;
+
+        // Get employee data with pagination - EXCLUDE RETURNED ORDERS FROM REVENUE CALCULATIONS
+        $emp_day_sql = "SELECT employee_name, 
+                                SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as daily_revenue,
+                                COUNT(*) as order_count,
+                                SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                                SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
                                 SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                                FROM invoices 
-                                WHERE status='Completed' AND $emp_day_condition";
-            $emp_day_total_result = $conn->query($emp_day_total_sql);
-            $emp_day_total_data = $emp_day_total_result->fetch_assoc();
-            
-            $emp_day_total = $emp_day_total_data['total'] ?? 0;
-            $repeated_revenue = $emp_day_total_data['repeated_revenue'] ?? 0;
-            $new_revenue = $emp_day_total_data['new_revenue'] ?? 0;
-            $total_orders = $emp_day_total_data['total_orders'] ?? 0;
-            $repeated_orders = $emp_day_total_data['repeated_orders'] ?? 0;
-            $new_orders = $emp_day_total_data['new_orders'] ?? 0;
+                                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                                SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                                SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                                FROM invoices
+                                WHERE status in ('Completed','Dispatched','Returned') AND $emp_day_condition
+                                GROUP BY employee_name
+                                ORDER BY daily_revenue DESC
+                                LIMIT $limit OFFSET $offset";
 
-            // Get employee data with pagination
-            $emp_day_sql = "SELECT employee_name, 
-                                    SUM(total_amount) as daily_revenue,
-                                    COUNT(*) as order_count,
-                                    SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                                    SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                                    SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                                    SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                                    FROM invoices
-                                    WHERE status='Completed' AND $emp_day_condition
-                                    GROUP BY employee_name
-                                    ORDER BY daily_revenue DESC
-                                    LIMIT $limit OFFSET $offset";
+        $emp_day_result = $conn->query($emp_day_sql);
 
-            $emp_day_result = $conn->query($emp_day_sql);
-
-            // Get count for pagination
-            $emp_day_count_sql = "SELECT COUNT(DISTINCT employee_name) as total FROM invoices WHERE status='Completed' AND $emp_day_condition";
-            $emp_day_count_result = $conn->query($emp_day_count_sql);
-            $emp_day_total_records = $emp_day_count_result->fetch_assoc()['total'];
-            $emp_day_total_pages = ceil($emp_day_total_records / $limit);
+        // Get count for pagination
+        $emp_day_count_sql = "SELECT COUNT(DISTINCT employee_name) as total FROM invoices WHERE status in ('Completed','Dispatched','Returned') AND $emp_day_condition";
+        $emp_day_count_result = $conn->query($emp_day_count_sql);
+        $emp_day_total_records = $emp_day_count_result->fetch_assoc()['total'];
+        $emp_day_total_pages = ceil($emp_day_total_records / $limit);
         ?>
 
-                <div class="mb-4 p-4 bg-gray-100 rounded-lg">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">Total Revenue</h4>
-                            <p class="text-xl text-green-600">₹ <?php echo number_format($emp_day_total, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $total_orders; ?> orders</p>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">New Customer Revenue</h4>
-                            <p class="text-xl text-blue-600">₹ <?php echo number_format($new_revenue, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $new_orders; ?> orders
-                                (<?php echo $total_orders > 0 ? round(($new_orders/$total_orders)*100, 1) : 0; ?>%)</p>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">Repeat Customer Revenue</h4>
-                            <p class="text-xl text-purple-600">₹ <?php echo number_format($repeated_revenue, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $repeated_orders; ?> orders
-                                (<?php echo $total_orders > 0 ? round(($repeated_orders/$total_orders)*100, 1) : 0; ?>%)
-                            </p>
-                        </div>
-                    </div>
+        <div class="mb-4 p-4 bg-gray-100 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Total Revenue</h4>
+                    <p class="text-xl text-green-600">₹ <?php echo number_format($emp_day_total, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $total_orders; ?> orders</p>
                 </div>
-
-                <div class="mb-2 p-2 bg-gray-100 rounded">
-                    <p class="text-sm text-gray-600">Showing
-                        <?php echo $offset + 1; ?>-<?php echo min($offset + $limit, $emp_day_total_records); ?> of
-                        <?php echo $emp_day_total_records; ?> employees</p>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">New Customer Revenue</h4>
+                    <p class="text-xl text-blue-600">₹ <?php echo number_format($new_revenue, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $new_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($new_orders/$total_orders)*100, 1) : 0; ?>%)</p>
                 </div>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Repeat Customer Revenue</h4>
+                    <p class="text-xl text-purple-600">₹ <?php echo number_format($repeated_revenue, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $repeated_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($repeated_orders/$total_orders)*100, 1) : 0; ?>%)</p>
+                </div>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Returned Orders</h4>
+                    <p class="text-xl text-red-600">₹ <?php echo number_format($returned_amount, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $returned_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($returned_orders/$total_orders)*100, 1) : 0; ?>%)</p>
+                </div>
+            </div>
+        </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                        <thead class="bg-gray-200">
-                            <tr class="whitespace-nowrap text-left">
-                                <th class="p-2 border">Employee</th>
-                                <th class="p-2 border">Total Orders</th>
-                                <th class="p-2 border">New Orders</th>
-                                <th class="p-2 border">Repeat Orders</th>
-                                <th class="p-2 border">Total Revenue</th>
-                                <th class="p-2 border">New Revenue</th>
-                                <th class="p-2 border">Repeat Revenue</th>
-                                <th class="p-2 border">Avg/Order</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($emp_day_result->num_rows > 0): ?>
-                            <?php while ($row = $emp_day_result->fetch_assoc()): ?>
-                            <tr class="text-left bg-gray-50 hover:bg-gray-100">
-                                <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                <td class="p-2 border"><?php echo $row['order_count']; ?></td>
-                                <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
-                                <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
-                                <td class="p-2 border text-green-600 font-bold">₹
-                                    <?php echo number_format($row['daily_revenue'], 2); ?></td>
-                                <td class="p-2 border text-blue-600">₹
-                                    <?php echo number_format($row['new_revenue'], 2); ?></td>
-                                <td class="p-2 border text-purple-600">₹
-                                    <?php echo number_format($row['repeated_revenue'], 2); ?></td>
-                                <td class="p-2 border">₹
-                                    <?php echo number_format($row['daily_revenue'] / $row['order_count'], 2); ?></td>
-                            </tr>
-                            <?php endwhile; ?>
-                            <?php else: ?>
-                            <tr>
-                                <td colspan="8" class="p-4 text-center text-gray-500">No employee data found</td>
-                            </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+        <div class="mb-2 p-2 bg-gray-100 rounded">
+            <p class="text-sm text-gray-600">Showing
+                <?php echo $offset + 1; ?>-<?php echo min($offset + $limit, $emp_day_total_records); ?> of
+                <?php echo $emp_day_total_records; ?> employees</p>
+        </div>
 
-                    <!-- Pagination -->
-                    <?php if ($emp_day_total_pages > 1): ?>
-                    <div class="flex justify-between items-center mt-4">
-                        <div>
-                            <?php if ($page > 1): ?>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"
-                                class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
-                                Previous
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            Page <?php echo $page; ?> of <?php echo $emp_day_total_pages; ?>
-                        </div>
-                        <div>
-                            <?php if ($page < $emp_day_total_pages): ?>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>"
-                                class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
-                                Next
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-sm">
+                <thead class="bg-gray-200">
+                    <tr class="whitespace-nowrap text-left">
+                        <th class="p-2 border">Employee</th>
+                        <th class="p-2 border">Total Orders</th>
+                        <th class="p-2 border">New Orders</th>
+                        <th class="p-2 border">Repeat Orders</th>
+                        <th class="p-2 border">Returned Orders</th>
+                        <th class="p-2 border">Total Revenue</th>
+                        <th class="p-2 border">New Revenue</th>
+                        <th class="p-2 border">Repeat Revenue</th>
+                        <th class="p-2 border">Returned Amount</th>
+                        <th class="p-2 border">Avg/Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($emp_day_result->num_rows > 0): ?>
+                    <?php while ($row = $emp_day_result->fetch_assoc()): ?>
+                    <tr class="text-left bg-gray-50 hover:bg-gray-100">
+                        <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                        <td class="p-2 border"><?php echo $row['order_count']; ?></td>
+                        <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
+                        <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
+                        <td class="p-2 border text-red-500"><?php echo $row['returned_orders']; ?></td>
+                        <td class="p-2 border text-green-600 font-bold">₹
+                            <?php echo number_format($row['daily_revenue'], 2); ?></td>
+                        <td class="p-2 border text-blue-600">₹
+                            <?php echo number_format($row['new_revenue'], 2); ?></td>
+                        <td class="p-2 border text-purple-600">₹
+                            <?php echo number_format($row['repeated_revenue'], 2); ?></td>
+                        <td class="p-2 border text-red-600">₹
+                            <?php echo number_format($row['returned_amount'], 2); ?></td>
+                        <td class="p-2 border">₹
+                            <?php echo number_format($row['daily_revenue'] / $row['order_count'], 2); ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                    <?php else: ?>
+                    <tr>
+                        <td colspan="10" class="p-4 text-center text-gray-500">No employee data found</td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <?php if ($emp_day_total_pages > 1): ?>
+            <div class="flex justify-between items-center mt-4">
+                <div>
+                    <?php if ($page > 1): ?>
+                    <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"
+                        class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
+                        Previous
+                    </a>
                     <?php endif; ?>
                 </div>
-                <?php endif; ?>
+                <div class="text-sm text-gray-600">
+                    Page <?php echo $page; ?> of <?php echo $emp_day_total_pages; ?>
+                </div>
+                <div>
+                    <?php if ($page < $emp_day_total_pages): ?>
+                    <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>"
+                        class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
+                        Next
+                    </a>
+                    <?php endif; ?>
+                </div>
             </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 
-            <!-- Employee Monthly Revenue -->
-            <div>
-                <h3 class="text-lg font-semibold mb-2">Monthly Employee Revenue</h3>
-                <form method="GET" class="mb-4 flex flex-wrap gap-4 items-center">
-                    <input type="month" name="emp_month_date"
-                        value="<?php echo isset($_GET['emp_month_date']) ? $_GET['emp_month_date'] : date('Y-m'); ?>"
-                        class="p-2 border rounded-md">
+    <!-- Employee Monthly Revenue -->
+    <div>
+        <h3 class="text-lg font-semibold mb-2">Monthly Employee Revenue</h3>
+        <form method="GET" class="mb-4 flex flex-wrap gap-4 items-center">
+            <input type="month" name="emp_month_date"
+                value="<?php echo isset($_GET['emp_month_date']) ? $_GET['emp_month_date'] : date('Y-m'); ?>"
+                class="p-2 border rounded-md">
 
-                    <select name="emp_month_employee" class="p-2 border rounded-md">
-                        <option value="">All Employees</option>
-                        <?php
-                    $emp_list_result->data_seek(0); // Reset pointer
-                    while ($emp = $emp_list_result->fetch_assoc()) {
-                        $selected = (isset($_GET['emp_month_employee'])) && $_GET['emp_month_employee'] == $emp['employee_name'] ? 'selected' : '';
-                        echo "<option value='{$emp['employee_name']}' $selected>{$emp['employee_name']}</option>";
-                    }
-                ?>
-                    </select>
-
-                    <button type="submit" class="p-2 bg-blue-500 text-white rounded-md">Filter</button>
-                </form>
-
-                <?php if (isset($_GET['emp_month_date'])): ?>
+            <select name="emp_month_employee" class="p-2 border rounded-md">
+                <option value="">All Employees</option>
                 <?php
-            $emp_month_date = $_GET['emp_month_date'];
-            $emp_month_employee = isset($_GET['emp_month_employee']) ? $_GET['emp_month_employee'] : '';
+                $emp_list_result->data_seek(0); // Reset pointer
+                while ($emp = $emp_list_result->fetch_assoc()) {
+                    $selected = (isset($_GET['emp_month_employee'])) && $_GET['emp_month_employee'] == $emp['employee_name'] ? 'selected' : '';
+                    echo "<option value='{$emp['employee_name']}' $selected>{$emp['employee_name']}</option>";
+                }
+                ?>
+            </select>
 
-            $emp_month_condition = "DATE_FORMAT(created_at, '%Y-%m') = '$emp_month_date'";
-            if (!empty($emp_month_employee)) {
-                $emp_month_condition .= " AND employee_name = '$emp_month_employee'";
-            }
+            <button type="submit" class="p-2 bg-blue-500 text-white rounded-md">Filter</button>
+        </form>
 
-            // Get totals for this filter
-            $emp_month_total_sql = "SELECT 
-                                SUM(total_amount) as total,
-                                SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                                COUNT(*) as total_orders,
+        <?php if (isset($_GET['emp_month_date'])): ?>
+        <?php
+        $emp_month_date = $_GET['emp_month_date'];
+        $emp_month_employee = isset($_GET['emp_month_employee']) ? $_GET['emp_month_employee'] : '';
+
+        $emp_month_condition = "DATE_FORMAT(created_at, '%Y-%m') = '$emp_month_date'";
+        if (!empty($emp_month_employee)) {
+            $emp_month_condition .= " AND employee_name = '$emp_month_employee'";
+        }
+
+        // Get totals for this filter - EXCLUDE RETURNED ORDERS FROM TOTAL REVENUE
+        $emp_month_total_sql = "SELECT 
+                            SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as total,
+                            SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                            SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
+                            COUNT(*) as total_orders,
+                            SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
+                            SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                            SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                            SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                            FROM invoices 
+                            WHERE status in ('Completed','Dispatched','Returned') AND $emp_month_condition";
+        $emp_month_total_result = $conn->query($emp_month_total_sql);
+        $emp_month_total_data = $emp_month_total_result->fetch_assoc();
+        
+        $emp_month_total = $emp_month_total_data['total'] ?? 0;
+        $repeated_revenue = $emp_month_total_data['repeated_revenue'] ?? 0;
+        $new_revenue = $emp_month_total_data['new_revenue'] ?? 0;
+        $total_orders = $emp_month_total_data['total_orders'] ?? 0;
+        $repeated_orders = $emp_month_total_data['repeated_orders'] ?? 0;
+        $new_orders = $emp_month_total_data['new_orders'] ?? 0;
+        $returned_amount = $emp_month_total_data['returned_amount'] ?? 0;
+        $returned_orders = $emp_month_total_data['returned_orders'] ?? 0;
+
+        // Get employee data with pagination - EXCLUDE RETURNED ORDERS FROM REVENUE CALCULATIONS
+        $emp_month_sql = "SELECT employee_name,
+                                SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as monthly_revenue,
+                                COUNT(*) as order_count,
+                                SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                                SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
                                 SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                                FROM invoices 
-                                WHERE status='Completed' AND $emp_month_condition";
-            $emp_month_total_result = $conn->query($emp_month_total_sql);
-            $emp_month_total_data = $emp_month_total_result->fetch_assoc();
-            
-            $emp_month_total = $emp_month_total_data['total'] ?? 0;
-            $repeated_revenue = $emp_month_total_data['repeated_revenue'] ?? 0;
-            $new_revenue = $emp_month_total_data['new_revenue'] ?? 0;
-            $total_orders = $emp_month_total_data['total_orders'] ?? 0;
-            $repeated_orders = $emp_month_total_data['repeated_orders'] ?? 0;
-            $new_orders = $emp_month_total_data['new_orders'] ?? 0;
+                                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                                SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                                SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                                FROM invoices
+                                WHERE status in ('Completed','Dispatched','Returned') AND $emp_month_condition
+                                GROUP BY employee_name
+                                ORDER BY monthly_revenue DESC
+                                LIMIT $limit OFFSET $offset";
 
-            // Get employee data with pagination
-            $emp_month_sql = "SELECT employee_name,
-                                    SUM(total_amount) as monthly_revenue,
-                                    COUNT(*) as order_count,
-                                    SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                                    SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                                    SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                                    SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                                    FROM invoices
-                                    WHERE status='Completed' AND $emp_month_condition
-                                    GROUP BY employee_name
-                                    ORDER BY monthly_revenue DESC
-                                    LIMIT $limit OFFSET $offset";
+        $emp_month_result = $conn->query($emp_month_sql);
 
-            $emp_month_result = $conn->query($emp_month_sql);
-
-            // Get count for pagination
-            $emp_month_count_sql = "SELECT COUNT(DISTINCT employee_name) as total FROM invoices WHERE status='Completed' AND $emp_month_condition";
-            $emp_month_count_result = $conn->query($emp_month_count_sql);
-            $emp_month_total_records = $emp_month_count_result->fetch_assoc()['total'];
-            $emp_month_total_pages = ceil($emp_month_total_records / $limit);
+        // Get count for pagination
+        $emp_month_count_sql = "SELECT COUNT(DISTINCT employee_name) as total FROM invoices WHERE status in ('Completed','Dispatched') AND $emp_month_condition";
+        $emp_month_count_result = $conn->query($emp_month_count_sql);
+        $emp_month_total_records = $emp_month_count_result->fetch_assoc()['total'];
+        $emp_month_total_pages = ceil($emp_month_total_records / $limit);
         ?>
 
-                <div class="mb-4 p-4 bg-gray-100 rounded-lg">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">Total Revenue</h4>
-                            <p class="text-xl text-green-600">₹ <?php echo number_format($emp_month_total, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $total_orders; ?> orders</p>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">New Customer Revenue</h4>
-                            <p class="text-xl text-blue-600">₹ <?php echo number_format($new_revenue, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $new_orders; ?> orders
-                                (<?php echo $total_orders > 0 ? round(($new_orders/$total_orders)*100, 1) : 0; ?>%)</p>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow">
-                            <h4 class="font-bold text-gray-700">Repeat Customer Revenue</h4>
-                            <p class="text-xl text-purple-600">₹ <?php echo number_format($repeated_revenue, 2); ?></p>
-                            <p class="text-sm text-gray-500"><?php echo $repeated_orders; ?> orders
-                                (<?php echo $total_orders > 0 ? round(($repeated_orders/$total_orders)*100, 1) : 0; ?>%)
-                            </p>
-                        </div>
-                    </div>
+        <div class="mb-4 p-4 bg-gray-100 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Total Revenue</h4>
+                    <p class="text-xl text-green-600">₹ <?php echo number_format($emp_month_total, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $total_orders; ?> orders</p>
                 </div>
-
-                <div class="mb-2 p-2 bg-gray-100 rounded">
-                    <p class="text-sm text-gray-600">Showing
-                        <?php echo $offset + 1; ?>-<?php echo min($offset + $limit, $emp_month_total_records); ?> of
-                        <?php echo $emp_month_total_records; ?> employees</p>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">New Customer Revenue</h4>
+                    <p class="text-xl text-blue-600">₹ <?php echo number_format($new_revenue, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $new_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($new_orders/$total_orders)*100, 1) : 0; ?>%)</p>
                 </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse border border-gray-300 text-sm">
-                        <thead class="bg-gray-200">
-                            <tr class="whitespace-nowrap text-left">
-                                <th class="p-2 border">Employee</th>
-                                <th class="p-2 border">Total Orders</th>
-                                <th class="p-2 border">New Orders</th>
-                                <th class="p-2 border">Repeat Orders</th>
-                                <th class="p-2 border">Total Revenue</th>
-                                <th class="p-2 border">New Revenue</th>
-                                <th class="p-2 border">Repeat Revenue</th>
-                                <th class="p-2 border">Avg/Order</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($emp_month_result->num_rows > 0): ?>
-                            <?php while ($row = $emp_month_result->fetch_assoc()): ?>
-                            <tr class="text-left bg-gray-50 hover:bg-gray-100">
-                                <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                <td class="p-2 border"><?php echo $row['order_count']; ?></td>
-                                <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
-                                <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
-                                <td class="p-2 border text-green-600 font-bold">₹
-                                    <?php echo number_format($row['monthly_revenue'], 2); ?></td>
-                                <td class="p-2 border text-blue-600">₹
-                                    <?php echo number_format($row['new_revenue'], 2); ?></td>
-                                <td class="p-2 border text-purple-600">₹
-                                    <?php echo number_format($row['repeated_revenue'], 2); ?></td>
-                                <td class="p-2 border">₹
-                                    <?php echo number_format($row['monthly_revenue'] / $row['order_count'], 2); ?></td>
-                            </tr>
-                            <?php endwhile; ?>
-                            <?php else: ?>
-                            <tr>
-                                <td colspan="8" class="p-4 text-center text-gray-500">No employee data found</td>
-                            </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-
-                    <!-- Pagination -->
-                    <?php if ($emp_month_total_pages > 1): ?>
-                    <div class="flex justify-between items-center mt-4">
-                        <div>
-                            <?php if ($page > 1): ?>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"
-                                class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
-                                Previous
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            Page <?php echo $page; ?> of <?php echo $emp_month_total_pages; ?>
-                        </div>
-                        <div>
-                            <?php if ($page < $emp_month_total_pages): ?>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>"
-                                class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
-                                Next
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Repeat Customer Revenue</h4>
+                    <p class="text-xl text-purple-600">₹ <?php echo number_format($repeated_revenue, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $repeated_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($repeated_orders/$total_orders)*100, 1) : 0; ?>%)</p>
                 </div>
-                <?php endif; ?>
+                <div class="p-3 bg-white rounded shadow">
+                    <h4 class="font-bold text-gray-700">Returned Orders</h4>
+                    <p class="text-xl text-red-600">₹ <?php echo number_format($returned_amount, 2); ?></p>
+                    <p class="text-sm text-gray-500"><?php echo $returned_orders; ?> orders
+                        (<?php echo $total_orders > 0 ? round(($returned_orders/$total_orders)*100, 1) : 0; ?>%)</p>
+                </div>
             </div>
         </div>
-        <!-- Export to Excel Button -->
-        <div class="mt-4">
-            <a href="export_revenue.php"
-                class="bg-yellow-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-yellow-600">
-                Export to Excel
-            </a>
+
+        <div class="mb-2 p-2 bg-gray-100 rounded">
+            <p class="text-sm text-gray-600">Showing
+                <?php echo $offset + 1; ?>-<?php echo min($offset + $limit, $emp_month_total_records); ?> of
+                <?php echo $emp_month_total_records; ?> employees</p>
         </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-sm">
+                <thead class="bg-gray-200">
+                    <tr class="whitespace-nowrap text-left">
+                        <th class="p-2 border">Employee</th>
+                        <th class="p-2 border">Total Orders</th>
+                        <th class="p-2 border">New Orders</th>
+                        <th class="p-2 border">Repeat Orders</th>
+                        <th class="p-2 border">Returned Orders</th>
+                        <th class="p-2 border">Total Revenue</th>
+                        <th class="p-2 border">New Revenue</th>
+                        <th class="p-2 border">Repeat Revenue</th>
+                        <th class="p-2 border">Returned Amount</th>
+                        <th class="p-2 border">Avg/Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($emp_month_result->num_rows > 0): ?>
+                    <?php while ($row = $emp_month_result->fetch_assoc()): ?>
+                    <tr class="text-left bg-gray-50 hover:bg-gray-100">
+                        <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                        <td class="p-2 border"><?php echo $row['order_count']; ?></td>
+                        <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
+                        <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
+                        <td class="p-2 border text-red-500"><?php echo $row['returned_orders']; ?></td>
+                        <td class="p-2 border text-green-600 font-bold">₹
+                            <?php echo number_format($row['monthly_revenue'], 2); ?></td>
+                        <td class="p-2 border text-blue-600">₹
+                            <?php echo number_format($row['new_revenue'], 2); ?></td>
+                        <td class="p-2 border text-purple-600">₹
+                            <?php echo number_format($row['repeated_revenue'], 2); ?></td>
+                        <td class="p-2 border text-red-600">₹
+                            <?php echo number_format($row['returned_amount'], 2); ?></td>
+                        <td class="p-2 border">₹
+                            <?php echo number_format($row['monthly_revenue'] / $row['order_count'], 2); ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                    <?php else: ?>
+                    <tr>
+                        <td colspan="10" class="p-4 text-center text-gray-500">No employee data found</td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <?php if ($emp_month_total_pages > 1): ?>
+            <div class="flex justify-between items-center mt-4">
+                <div>
+                    <?php if ($page > 1): ?>
+                    <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"
+                        class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
+                        Previous
+                    </a>
+                    <?php endif; ?>
+                </div>
+                <div class="text-sm text-gray-600">
+                    Page <?php echo $page; ?> of <?php echo $emp_month_total_pages; ?>
+                </div>
+                <div>
+                    <?php if ($page < $emp_month_total_pages): ?>
+                    <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>"
+                        class="bg-gray-200 px-3 py-1 rounded-md hover:bg-gray-300">
+                        Next
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
 
         <script>
         function updateFilterFields(period) {

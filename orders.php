@@ -204,17 +204,17 @@
                         </option>
                         <option value="Completed" <?php echo $status_filter === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="InComplete" <?php echo $status_filter === 'InComplete' ? 'selected' : ''; ?>>
-                            InComplete</option>
-                        <option value="Canceled" <?php echo $status_filter === 'Canceled' ? 'selected' : ''; ?>>Canceled
+                        <option value="Incomplete" <?php echo $status_filter === 'Incomplete' ? 'selected' : ''; ?>>
+                            Incomplete</option>
+                        <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled
                         </option>
                         <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
                         <option value="Dispatched" <?php echo $status_filter === 'Dispatched' ? 'selected' : ''; ?>>
                             Dispatched
                         </option>
-                        <option value="Deleay" <?php echo $status_filter === 'Deleay' ? 'selected' : ''; ?>>
-                            Deleay
+                        <option value="Delay" <?php echo $status_filter === 'Delay' ? 'selected' : ''; ?>>
+                            Delay
                         </option>
                     </select>
 
@@ -283,10 +283,10 @@
                         <tr class="text-left bg-gray-50 hover:bg-gray-100">
                             <td class="p-2 border"><input type="checkbox" name="selected[]"
                                     value="<?php echo $row['id']; ?>"></td>
-                            <td class="p-2 border text-center flex space-x-2">
+                                    <td class="p-2 border text-center flex space-x-2">
+                                <?php if ($_SESSION['role'] == 'Admin'): ?>
                                 <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
                                     class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
-                                <?php if ($_SESSION['role'] == 'Admin'): ?>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                     <button type="submit" name="delete_invoice"

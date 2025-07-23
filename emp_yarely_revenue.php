@@ -15,58 +15,62 @@
             <h3 class="text-lg font-semibold text-gray-700 mb-2">Employee-wise Yearly Revenue</h3>
 
             <?php
-        // Set default year to current year
-        $current_year = date('Y');
+            // Set default year to current year
+            $current_year = date('Y');
 
-        // Fetch selected year from filter, or use current year
-        $selected_year = isset($_GET['filter_year']) ? $_GET['filter_year'] : $current_year;
+            // Fetch selected year from filter, or use current year
+            $selected_year = isset($_GET['filter_year']) ? $_GET['filter_year'] : $current_year;
 
-        // Get totals for this filter
-        $total_sql = "SELECT
-                SUM(total_amount) as total,
-                SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                COUNT(*) as total_orders,
-                SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                FROM invoices
-                WHERE status='Completed'
-                AND YEAR(created_at) = '$selected_year'";
-        $total_result = $conn->query($total_sql);
-        $total_data   = $total_result->fetch_assoc();
+            // Get totals for this filter - EXCLUDE RETURNED ORDERS FROM REVENUE CALCULATIONS
+            $total_sql = "SELECT
+                    SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as total,
+                    SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                    SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
+                    COUNT(*) as total_orders,
+                    SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
+                    SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                    SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                    SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                    FROM invoices
+                    WHERE status IN ('Completed','Dispatched','Returned')
+                    AND YEAR(created_at) = '$selected_year'";
+            $total_result = $conn->query($total_sql);
+            $total_data   = $total_result->fetch_assoc();
 
-        $total_revenue    = $total_data['total'] ?? 0;
-        $repeated_revenue = $total_data['repeated_revenue'] ?? 0;
-        $new_revenue      = $total_data['new_revenue'] ?? 0;
-        $total_orders     = $total_data['total_orders'] ?? 0;
-        $repeated_orders  = $total_data['repeated_orders'] ?? 0;
-        $new_orders       = $total_data['new_orders'] ?? 0;
-    ?>
+            $total_revenue    = $total_data['total'] ?? 0;
+            $repeated_revenue = $total_data['repeated_revenue'] ?? 0;
+            $new_revenue      = $total_data['new_revenue'] ?? 0;
+            $total_orders     = $total_data['total_orders'] ?? 0;
+            $repeated_orders  = $total_data['repeated_orders'] ?? 0;
+            $new_orders       = $total_data['new_orders'] ?? 0;
+            $returned_amount  = $total_data['returned_amount'] ?? 0;
+            $returned_orders  = $total_data['returned_orders'] ?? 0;
+            ?>
 
             <!-- Year Filter for Yearly Revenue -->
             <form method="GET" class="mb-4 flex flex-wrap items-center gap-4">
                 <label for="filter_year" class="font-semibold">Year:</label>
                 <select name="filter_year" id="filter_year" class="border p-2 rounded-md">
                     <?php
-                for ($y = $current_year; $y >= ($current_year - 5); $y--) {
-                    $selected = ($y == $selected_year) ? "selected" : "";
-                    echo "<option value='$y' $selected>$y</option>";
-                }
-            ?>
+                    for ($y = $current_year; $y >= ($current_year - 5); $y--) {
+                        $selected = ($y == $selected_year) ? "selected" : "";
+                        echo "<option value='$y' $selected>$y</option>";
+                    }
+                    ?>
                 </select>
 
-                <button type="submit"
-                    class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Filter</button>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Filter</button>
 
                 <!-- Export to Excel Button -->
-                <a href="export_yearemp.php" class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600">
+                <a href="export_yearemp.php?filter_year=<?php echo $selected_year;?>" 
+                   class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600">
                     Export to Excel
                 </a>
             </form>
 
             <!-- Revenue Summary Cards -->
             <div class="mb-4 p-4 bg-gray-100 rounded-lg">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="p-3 bg-white rounded shadow">
                         <h4 class="font-bold text-gray-700">Total Revenue</h4>
                         <p class="text-xl text-green-600">₹ <?php echo number_format($total_revenue, 2); ?></p>
@@ -82,8 +86,13 @@
                         <h4 class="font-bold text-gray-700">Repeat Customer Revenue</h4>
                         <p class="text-xl text-purple-600">₹ <?php echo number_format($repeated_revenue, 2); ?></p>
                         <p class="text-sm text-gray-500"><?php echo $repeated_orders; ?> orders
-                            (<?php echo $total_orders > 0 ? round(($repeated_orders / $total_orders) * 100, 1) : 0; ?>%)
-                        </p>
+                            (<?php echo $total_orders > 0 ? round(($repeated_orders / $total_orders) * 100, 1) : 0; ?>%)</p>
+                    </div>
+                    <div class="p-3 bg-white rounded shadow">
+                        <h4 class="font-bold text-gray-700">Returned Orders</h4>
+                        <p class="text-xl text-red-600">₹ <?php echo number_format($returned_amount, 2); ?></p>
+                        <p class="text-sm text-gray-500"><?php echo $returned_orders; ?> orders
+                            (<?php echo $total_orders > 0 ? round(($returned_orders / $total_orders) * 100, 1) : 0; ?>%)</p>
                     </div>
                 </div>
             </div>
@@ -96,51 +105,57 @@
                         <th class="p-2 border">Total Orders</th>
                         <th class="p-2 border">New Orders</th>
                         <th class="p-2 border">Repeat Orders</th>
+                        <th class="p-2 border">Returned Orders</th>
                         <th class="p-2 border">Total Revenue (₹)</th>
                         <th class="p-2 border">New Revenue (₹)</th>
                         <th class="p-2 border">Repeat Revenue (₹)</th>
+                        <th class="p-2 border">Returned Amount (₹)</th>
                         <th class="p-2 border">Avg/Order (₹)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php
-                // Query to get employee-wise total yearly revenue with repeated order analysis
-                $emp_yearly_sql = "SELECT employee_name,
-                                COALESCE(SUM(total_amount), 0) AS total_yearly_revenue,
-                                COUNT(*) as order_count,
-                                SUM(CASE WHEN is_repeated_order = 'yes' THEN total_amount ELSE 0 END) as repeated_revenue,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN total_amount ELSE 0 END) as new_revenue,
-                                SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
-                                SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders
-                                FROM invoices
-                                WHERE status='Completed'
-                                AND YEAR(created_at) = '$selected_year'
-                                GROUP BY employee_name
-                                ORDER BY total_yearly_revenue DESC";
+                    // Query to get employee-wise total yearly revenue with repeated order analysis
+                    $emp_yearly_sql = "SELECT employee_name,
+                                    SUM(CASE WHEN status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) AS total_yearly_revenue,
+                                    COUNT(*) as order_count,
+                                    SUM(CASE WHEN is_repeated_order = 'yes' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as repeated_revenue,
+                                    SUM(CASE WHEN is_repeated_order = 'no' AND status IN ('Completed','Dispatched') THEN total_amount ELSE 0 END) as new_revenue,
+                                    SUM(CASE WHEN is_repeated_order = 'yes' THEN 1 ELSE 0 END) as repeated_orders,
+                                    SUM(CASE WHEN is_repeated_order = 'no' THEN 1 ELSE 0 END) as new_orders,
+                                    SUM(CASE WHEN status = 'Returned' THEN total_amount ELSE 0 END) as returned_amount,
+                                    SUM(CASE WHEN status = 'Returned' THEN 1 ELSE 0 END) as returned_orders
+                                    FROM invoices
+                                    WHERE status IN ('Completed','Dispatched','Returned')
+                                    AND YEAR(created_at) = '$selected_year'
+                                    GROUP BY employee_name
+                                    ORDER BY total_yearly_revenue DESC";
 
-                $emp_yearly_result = $conn->query($emp_yearly_sql);
-                if ($emp_yearly_result->num_rows > 0):
-                    while ($row = $emp_yearly_result->fetch_assoc()):
-                        $avg_order = $row['order_count'] > 0 ? $row['total_yearly_revenue'] / $row['order_count'] : 0;
-                    ?>
-                    <tr class="text-left bg-gray-50 hover:bg-gray-100">
-                        <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                        <td class="p-2 border"><?php echo $row['order_count']; ?></td>
-                        <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
-                        <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
-                        <td class="p-2 border text-green-600 font-bold">₹
-                            <?php echo number_format($row['total_yearly_revenue'], 2); ?></td>
-                        <td class="p-2 border text-blue-600">₹ <?php echo number_format($row['new_revenue'], 2); ?></td>
-                        <td class="p-2 border text-purple-600">₹
-                            <?php echo number_format($row['repeated_revenue'], 2); ?></td>
-                        <td class="p-2 border">₹ <?php echo number_format($avg_order, 2); ?></td>
-                    </tr>
-                    <?php endwhile;
-                        else: ?>
-                    <tr>
-                        <td class="p-2 border text-center text-gray-500" colspan="8">No data found for selected year.
-                        </td>
-                    </tr>
+                    $emp_yearly_result = $conn->query($emp_yearly_sql);
+                    if ($emp_yearly_result->num_rows > 0):
+                        while ($row = $emp_yearly_result->fetch_assoc()):
+                            $avg_order = $row['order_count'] > 0 ? $row['total_yearly_revenue'] / $row['order_count'] : 0;
+                            ?>
+                            <tr class="text-left bg-gray-50 hover:bg-gray-100">
+                                <td class="p-2 border"><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                                <td class="p-2 border"><?php echo $row['order_count']; ?></td>
+                                <td class="p-2 border"><?php echo $row['new_orders']; ?></td>
+                                <td class="p-2 border"><?php echo $row['repeated_orders']; ?></td>
+                                <td class="p-2 border text-red-500"><?php echo $row['returned_orders']; ?></td>
+                                <td class="p-2 border text-green-600 font-bold">₹
+                                    <?php echo number_format($row['total_yearly_revenue'], 2); ?></td>
+                                <td class="p-2 border text-blue-600">₹ <?php echo number_format($row['new_revenue'], 2); ?></td>
+                                <td class="p-2 border text-purple-600">₹
+                                    <?php echo number_format($row['repeated_revenue'], 2); ?></td>
+                                <td class="p-2 border text-red-600">₹
+                                    <?php echo number_format($row['returned_amount'], 2); ?></td>
+                                <td class="p-2 border">₹ <?php echo number_format($avg_order, 2); ?></td>
+                            </tr>
+                        <?php endwhile;
+                    else: ?>
+                        <tr>
+                            <td class="p-2 border text-center text-gray-500" colspan="10">No data found for selected year.</td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
