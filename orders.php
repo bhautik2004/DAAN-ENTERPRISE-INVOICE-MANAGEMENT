@@ -239,6 +239,8 @@
         <th class="p-2 border min-w-[100px] bg-gray-200">Mobile2</th>
         <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
         <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
+        <th class="p-2 border min-w-[200px] bg-gray-150">Remark For Admin</th>
+
         <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
         <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
         <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
@@ -307,6 +309,7 @@
                             <td class="p-2 border"><?php echo htmlspecialchars($row['mobile2']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['full_name']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['barcode_number']); ?></td>
+                            <td class="p-2 border"><?php echo htmlspecialchars($row['Remark']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['customer_id'] ?? ''); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['address1']); ?></td>
                             <td class="p-2 border"><?php echo htmlspecialchars($row['address2']); ?></td>

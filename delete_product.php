@@ -25,5 +25,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["id"])) {
         } else {
             echo "<script>alert('Error deleting product.'); window.location.href='products.php';</script>";
         }
+        $stmt->close();
     }
+    $check_stmt->close();
+    $conn->close();
 }

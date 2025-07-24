@@ -56,3 +56,5 @@ $filteredIds = array_diff($allIds, $excludeIds);
 
 header('Content-Type: application/json');
 echo json_encode(['ids' => array_values($filteredIds)]);
+$stmt->close();
+$conn->close();

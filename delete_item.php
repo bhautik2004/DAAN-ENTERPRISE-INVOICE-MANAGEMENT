@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id'])) {
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to delete item']);
         }
+        $stmt->close();
+        $conn->close();
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }

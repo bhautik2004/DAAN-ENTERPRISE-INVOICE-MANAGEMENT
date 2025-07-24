@@ -23,6 +23,7 @@
         $barcode_number    = $_POST['barcode_number'];
         $employee_name     = $_POST['employee_name'];
         $advanced_payment  = (float) $_POST['advanced_payment']; // Convert to float
+        $remark = $_POST['Remark'];
         $status            = "Pending";
         $is_repeated_order = $_POST['is_repeated_order'] ?? 'no'; // Get repeated order status
         date_default_timezone_set('Asia/Kolkata');
@@ -35,14 +36,14 @@
             // Insert invoice (without product-related fields)
             $query = "INSERT INTO invoices (mobile, full_name, address1, address2, pincode, district,
               sub_district, village, post_name, mobile2, barcode_number, employee_name,
-              customer_id, advanced_payment, status, created_at, is_repeated_order)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+              customer_id, advanced_payment, status, created_at, is_repeated_order,Remark)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
 
             $stmt        = $conn->prepare($query);
             $customer_id = $_POST['customer_id']; // Get from form
-            $stmt->bind_param("sssssssssssssdsss", $mobile, $full_name, $address1, $address2, $pincode,
+            $stmt->bind_param("sssssssssssssdssss", $mobile, $full_name, $address1, $address2, $pincode,
                 $district, $sub_district, $village, $post_name, $mobile2, $barcode_number,
-                $employee_name, $customer_id, $advanced_payment, $status, $created_at, $is_repeated_order);
+                $employee_name, $customer_id, $advanced_payment, $status, $created_at, $is_repeated_order,$remark);
             if (! $stmt->execute()) {
                 throw new Exception("Error creating invoice: " . $stmt->error);
             }
@@ -127,6 +128,7 @@ if (isset($_GET['clone_id'])) {
         $prefilled_data = $result->fetch_assoc();
         $is_repeated_order = "yes"; // Mark as repeated order
     }
+    $stmt->close(); // <-- ADD THIS LINE
 }
 ?>
 
@@ -494,14 +496,19 @@ if (isset($_GET['clone_id'])) {
                         Add Another Product
                     </button>
                 </div>
-
-                <!-- Advanced Payment Section -->
-                <div class="mb-6">
-                    <label class="block text-sm font-semibold mb-1">Advanced Payment (₹)</label>
-                    <input type="number" name="advanced_payment"
-                        class="w-full md:w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Advanced Payment Section -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-1">Advanced Payment (₹)</label>
+                        <input type="number" name="advanced_payment"
+                            class="w-full  p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Special Remark For Admin For This Invoice</label>
+                        <input type="text" name="Remark"
+                            class="w-full  p-2 border border-gray-300 rounded-md">
+                    </div>
                 </div>
-
                 <!-- Submit Button -->
                 <div class="flex justify-end">
                     <button type="submit" name="Create_invoice"
@@ -694,6 +701,8 @@ if (isset($_GET['clone_id'])) {
             } else {
                 echo json_encode(['error' => 'Customer not found']);
             }
+            $stmt->close();   // <-- ADD THIS LINE
+    $conn->close();   // <-- ADD THIS LINE
             exit;
         }
         $conn->close();

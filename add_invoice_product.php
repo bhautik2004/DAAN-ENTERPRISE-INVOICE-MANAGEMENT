@@ -66,7 +66,10 @@ try {
         'product_name' => $product_name,
         'total_amount' => $total,
     ]);
-
+    $product_query->close();
+    $stmt->close();
+    $total_stmt->close();
+    $conn->close();
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,

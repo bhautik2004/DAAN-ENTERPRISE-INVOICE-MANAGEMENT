@@ -7,3 +7,5 @@ $data   = mysqli_fetch_assoc($result);
 
 header('Content-Type: application/json');
 echo json_encode($data);
+mysqli_free_result($result);
+$conn->close();

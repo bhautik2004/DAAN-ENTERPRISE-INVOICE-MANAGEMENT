@@ -41,15 +41,21 @@
                 }
 
                 $redirectPage = ($role === "admin") ? "index.php" : "index.php";
+                $stmt->close();
+                $conn->close();
                 header("Location: " . $redirectPage);
                 exit();
             } else {
                 $_SESSION[$role . '_message'] = "Invalid credentials. Please try again.";
                 $_SESSION['login_role']       = $role; // Store role for showing correct form
+                $stmt->close();
+                $conn->close();
             }
         } else {
             $_SESSION[$role . '_message'] = "No user found with these credentials.";
             $_SESSION['login_role']       = $role;
+            $stmt->close();
+            $conn->close();
         }
 
         header("Location: login.php"); // Redirect back to show error message

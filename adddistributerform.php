@@ -38,8 +38,8 @@
             }
             $check_stmt->close();
         }
-        $conn->close();
     }
+    $conn->close();
 ?>
 
 <section class="mt-8">

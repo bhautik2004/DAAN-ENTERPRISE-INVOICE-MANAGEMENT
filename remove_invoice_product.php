@@ -36,6 +36,9 @@ try {
         'success' => true,
         'new_total' => $total
     ]);
+    $stmt->close();
+    $total_stmt->close();
+    $conn->close();
     
 } catch (Exception $e) {
     echo json_encode([

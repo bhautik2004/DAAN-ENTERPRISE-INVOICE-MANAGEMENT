@@ -23,4 +23,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: products.php?error=All fields are required!");
         exit();
     }
+    $stmt->close();
+    $conn->close();
 }

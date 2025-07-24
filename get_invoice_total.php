@@ -21,3 +21,6 @@ try {
         'message' => $e->getMessage(),
     ]);
 }
+
+$result->close();
+$conn->close();

@@ -38,7 +38,10 @@ try {
 
         $row['invoice_items'] = $invoice_items;
         $invoices[]           = $row;
+        $items_stmt->close();
     }
+    $stmt->close();
+    $conn->close();
 
     echo json_encode($invoices);
 } catch (Exception $e) {
