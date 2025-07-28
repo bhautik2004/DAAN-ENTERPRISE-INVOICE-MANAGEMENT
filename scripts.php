@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`barcode-input-${invoiceId}`).focus();
         });
     });
-    <?php endif; ?>
+    
 
     // Status editing - for both employees and admins
     const statusCells = document.querySelectorAll('td:nth-child(3)'); // 3rd column is status
@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`status-input-${invoiceId}`).focus();
         });
     });
+    <?php endif; ?>
 });
 
 function saveBarcode(event, invoiceId) {

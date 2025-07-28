@@ -1,5 +1,4 @@
 <aside class="w-56 bg-[var(--primary-color)] text-white h-screen p-5 fixed overflow-y-auto scrollbar-hide">
-
     <div class="flex flex-col items-center space-y-2 p-4">
         <span class="text-2xl font-bold">Dashboard</span>
     </div>
@@ -46,14 +45,12 @@
 
             <li class="hover:bg-gray-700 rounded-md cursor-pointer">
                 <a href="emp_monthly_revenue.php" class="flex items-center space-x-2 p-2 w-full block">
-                    <i class="fa-solid fa-indian-rupee-sign text-white-500 text-xl"></i> <span>Employee Monthly
-                        Revenue</span>
+                    <i class="fa-solid fa-indian-rupee-sign text-white-500 text-xl"></i> <span>Employee Monthly Revenue</span>
                 </a>
             </li>
             <li class="hover:bg-gray-700 rounded-md cursor-pointer">
                 <a href="emp_yarely_revenue.php" class="flex items-center space-x-2 p-2 w-full block">
-                    <i class="fa-solid fa-indian-rupee-sign text-white-500 text-xl"></i> <span>Employee Yearly
-                        Revenue</span>
+                    <i class="fa-solid fa-indian-rupee-sign text-white-500 text-xl"></i> <span>Employee Yearly Revenue</span>
                 </a>
             </li>
             <li class="hover:bg-gray-700 rounded-md cursor-pointer">
@@ -62,8 +59,6 @@
                 </a>
             </li>
             <?php } ?>
-
-
 
             <li class="bg-red-500 hover:bg-red-600 rounded-md cursor-pointer">
                 <a href="logout.php" class="flex items-center space-x-2 p-2 w-full block">
@@ -75,17 +70,36 @@
 </aside>
 
 <style>
-aside::-webkit-scrollbar {
-    width: 0px;
-    /* Hide scrollbar */
-    background: transparent;
-    /* Make it invisible */
-}
+    aside::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
 
-aside {
-    scrollbar-width: none;
-    /* Firefox support */
-    -ms-overflow-style: none;
-    /* Internet Explorer/Edge */
-}
+    aside {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    /* Prevent scroll bleed to main content */
+    aside:hover ~ main {
+        pointer-events: none;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('aside');
+    
+    sidebar.addEventListener('wheel', function(e) {
+        const isScrollable = this.scrollHeight > this.clientHeight;
+        const isAtTop = this.scrollTop === 0;
+        const isAtBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 1;
+        
+        if (!isScrollable || 
+            (isAtTop && e.deltaY < 0) || 
+            (isAtBottom && e.deltaY > 0)) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+});
+</script>
