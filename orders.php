@@ -206,7 +206,8 @@
                             Completed</option>
                         <option value="Incomplete" <?php echo $status_filter === 'Incomplete' ? 'selected' : ''; ?>>
                             Incomplete</option>
-                        <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled
+                        <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>
+                            Cancelled
                         </option>
                         <option value="Returned" <?php echo $status_filter === 'Returned' ? 'selected' : ''; ?>>Returned
                         </option>
@@ -229,33 +230,33 @@
                 </form>
 
                 <table class="w-full min-w-[900px] border-collapse border border-gray-300 text-sm">
-                   <thead class="bg-gray-200 sticky top-0 z-10">
-    <tr class="whitespace-nowrap text-left">
-        <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
-        <th class="p-2 border min-w-[180px] text-center bg-gray-200">Actions</th>
-        <th class="p-2 border min-w-[200px] bg-gray-200">Status</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Mobile2</th>
-        <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
-        <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
-        <th class="p-2 border min-w-[200px] bg-gray-150">Remark For Admin</th>
+                    <thead class="bg-gray-200 sticky top-0 z-10">
+                        <tr class="whitespace-nowrap text-left">
+                            <th class="p-2 border min-w-[30px] bg-gray-200"><input type="checkbox" id="select-all"></th>
+                            <th class="p-2 border min-w-[180px] text-center bg-gray-200">Actions</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Status</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Invoice Id</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Mobile</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Mobile2</th>
+                            <th class="p-2 border min-w-[150px] bg-gray-200">Name</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Barcode</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-150">Remark For Admin</th>
 
-        <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
-        <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
-        <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
-        <th class="p-2 border min-w-[80px] bg-gray-200">Pincode</th>
-        <th class="p-2 border min-w-[120px] bg-gray-200">District</th>
-        <th class="p-2 border min-w-[120px] bg-gray-200">Sub District</th>
-        <th class="p-2 border min-w-[120px] bg-gray-200">Village</th>
-        <th class="p-2 border min-w-[350px] bg-gray-200">Products</th>
-        <th class="p-2 border min-w-[120px] bg-gray-200">Employee</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Total</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Adv. Payment</th>
-        <th class="p-2 border min-w-[100px] bg-gray-200">Repeated Order</th>
-        <th class="p-2 border min-w-[140px] bg-gray-200">Created At</th>
-    </tr>
-</thead>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Customer ID</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 1</th>
+                            <th class="p-2 border min-w-[200px] bg-gray-200">Address 2</th>
+                            <th class="p-2 border min-w-[80px] bg-gray-200">Pincode</th>
+                            <th class="p-2 border min-w-[120px] bg-gray-200">District</th>
+                            <th class="p-2 border min-w-[120px] bg-gray-200">Sub District</th>
+                            <th class="p-2 border min-w-[120px] bg-gray-200">Village</th>
+                            <th class="p-2 border min-w-[350px] bg-gray-200">Products</th>
+                            <th class="p-2 border min-w-[120px] bg-gray-200">Employee</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Total</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Adv. Payment</th>
+                            <th class="p-2 border min-w-[100px] bg-gray-200">Repeated Order</th>
+                            <th class="p-2 border min-w-[140px] bg-gray-200">Created At</th>
+                        </tr>
+                    </thead>
                     <tbody class="divide-y divide-gray-300">
                         <?php while ($row = $result->fetch_assoc()):
                                 // Fetch items for this invoice
@@ -285,7 +286,7 @@
                         <tr class="text-left bg-gray-50 hover:bg-gray-100">
                             <td class="p-2 border"><input type="checkbox" name="selected[]"
                                     value="<?php echo $row['id']; ?>"></td>
-                                    <td class="p-2 border text-center flex space-x-2">
+                            <td class="p-2 border text-center flex space-x-2">
                                 <?php if ($_SESSION['role'] == 'Admin'): ?>
                                 <a href="edit_invoice.php?id=<?php echo $row['id']; ?>"
                                     class="bg-yellow-500 text-white px-3 py-1 text-xs rounded">Edit</a>
@@ -344,16 +345,46 @@
         </div>
 
         <?php if ($_SESSION['role'] == 'Admin'): ?>
+
+
         <!-- Bulk Actions -->
-        <div class="mt-4 flex gap-4 w-full">
-            <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded"
-                onclick="printSelectedInvoices()">Print Selected</button>
 
-            <button type="button" class="bg-green-600 text-white px-4 py-2 rounded"
-                onclick="printMahavirCourierInvoices()">Other Courier Print</button>
+        <div class="relative bg-white p-4 rounded-md shadow-md mt-4 mr-5">
+            <div class=" text-l font-bold">Bulk Actions</div>
+            <div class="mt-4 flex gap-4 w-full">
+
+                <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded"
+                    onclick="printSelectedInvoices()">Print Selected</button>
+
+                <button type="button" class="bg-green-600 text-white px-4 py-2 rounded"
+                    onclick="printMahavirCourierInvoices()">Other Courier Print</button>
+            </div>
+            <div class="mt-4 flex gap-4 w-full">
+                <select id="bulk-action" class="p-2 border border-gray-300 rounded-md">
+                    <option value="">-- Select Action --</option>
+                    <option value="delete">Delete Selected</option>
+                    <option value="status">Update Status</option>
+                </select>
+
+                <select id="status-select" class="p-2 border border-gray-300 rounded-md hidden">
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Incomplete">Incomplete</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Dispatched">Dispatched</option>
+                    <option value="Delay">Delay</option>
+                </select>
+
+                <button type="button" id="apply-bulk-action" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Apply
+                </button>
+            </div>
         </div>
-
         <?php endif; ?>
+
+
+
         <!-- Pagination -->
         <div class="mt-4 flex justify-center items-center space-x-2">
             <?php if ($page > 1): ?>
@@ -499,6 +530,88 @@
             updateSelectAllCheckbox();
         }
     });
+    document.getElementById('bulk-action').addEventListener('change', function() {
+        const statusSelect = document.getElementById('status-select');
+        if (this.value === 'status') {
+            statusSelect.classList.remove('hidden');
+        } else {
+            statusSelect.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('apply-bulk-action').addEventListener('click', function() {
+        const action = document.getElementById('bulk-action').value;
+        const checkboxes = document.querySelectorAll('input[name="selected[]"]:checked');
+
+        if (checkboxes.length === 0) {
+            showMessage('Please select at least one invoice', 'error');
+            return;
+        }
+
+        if (!action) {
+            showMessage('Please select an action', 'error');
+            return;
+        }
+
+        const invoiceIds = Array.from(checkboxes).map(cb => cb.value);
+
+        if (action === 'delete') {
+            if (confirm('Are you sure you want to delete the selected invoices? This cannot be undone.')) {
+                bulkDeleteInvoices(invoiceIds);
+            }
+        } else if (action === 'status') {
+            const newStatus = document.getElementById('status-select').value;
+            if (confirm(`Are you sure you want to update status to ${newStatus} for selected invoices?`)) {
+                bulkUpdateStatus(invoiceIds, newStatus);
+            }
+        }
+    });
+
+    function bulkDeleteInvoices(invoiceIds) {
+        fetch('bulk_actions.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=delete&ids=${JSON.stringify(invoiceIds)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    // Reload after 1 second
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(data.error || 'Error performing bulk action', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error.message, 'error');
+            });
+    }
+
+    function bulkUpdateStatus(invoiceIds, newStatus) {
+        fetch('bulk_actions.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=status&ids=${JSON.stringify(invoiceIds)}&status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    // Reload after 1 second
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(data.error || 'Error performing bulk action', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error.message, 'error');
+            });
+    }
 
     function updateSelectAllCheckbox() {
         const checkboxes = document.querySelectorAll('input[name="selected[]"]');
