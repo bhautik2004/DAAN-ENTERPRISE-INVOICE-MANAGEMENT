@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 08, 2025 at 02:41 PM
+-- Generation Time: Aug 02, 2025 at 08:00 AM
 -- Server version: 10.4.24-MariaDB
 -- PHP Version: 8.1.6
 
@@ -39,7 +39,8 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`id`, `name`, `email`, `password`) VALUES
-(1, 'Rutvik Vekariya', 'dan@gmail.com', '$2y$10$GZOyOUEtS/XL93NhbGmpGewU813YyfJjdvZuO0xkX4IQLDQ5F4ul6');
+(1, 'AT OFFICE', 'dan@gmail.com', '$2y$10$T4/DBGWskc5KD8LI3heITebXKw.x1Rpp/C25g2H0WM.7hyrYDdZka'),
+(2, 'bhautik', 'bhautik@gmail.com', '$2y$10$NeC9L.Om0xndGhjcbb46T.gbczq/ezh3JRsk6xSYitsat5EtQrx8e');
 
 -- --------------------------------------------------------
 
@@ -98,7 +99,8 @@ CREATE TABLE `invoices` (
   `advanced_payment` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'Pending',
-  `is_repeated_order` enum('yes','no') DEFAULT 'no'
+  `is_repeated_order` enum('yes','no') DEFAULT 'no',
+  `Remark` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -182,7 +184,7 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `distributors`
