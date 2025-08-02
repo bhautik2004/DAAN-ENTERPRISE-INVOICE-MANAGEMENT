@@ -36,6 +36,11 @@
     $items_result  = $items_stmt->get_result();
     $invoice_items = $items_result->fetch_all(MYSQLI_ASSOC);
 
+    // Fetch all customer IDs from distributors table
+    $customers_sql    = "SELECT customer_id FROM distributors ORDER BY customer_id";
+    $customers_result = $conn->query($customers_sql);
+    $customer_ids     = $customers_result->fetch_all(MYSQLI_ASSOC);
+
     // Fetch all products for dropdown
     $products_sql    = "SELECT id, product_name, price FROM products ORDER BY product_name";
     $products_result = $conn->query($products_sql);
@@ -54,14 +59,14 @@
             try {
                 // Update invoice header
                 $updateSql = "UPDATE invoices SET
-                    full_name = ?, mobile = ?, address1 = ?, address2 = ?, pincode = ?,
-                    district = ?, sub_district = ?, village = ?, post_name = ?, mobile2 = ?,
-                    barcode_number = ?, employee_name = ?, advanced_payment = ?, status = ?,
-                    total_amount = ?
-                    WHERE id = ?";
+    full_name = ?, mobile = ?, address1 = ?, address2 = ?, pincode = ?,
+    district = ?, sub_district = ?, village = ?, post_name = ?, mobile2 = ?,
+    barcode_number = ?, employee_name = ?, advanced_payment = ?, status = ?,
+    total_amount = ?, customer_id = ?
+    WHERE id = ?";
 
                 $stmt = $conn->prepare($updateSql);
-                $stmt->bind_param("ssssssssssssdsdi",
+                $stmt->bind_param("ssssssssssssdsdsi",
                     $_POST['full_name'],
                     $_POST['mobile'],
                     $_POST['address1'],
@@ -77,6 +82,7 @@
                     $_POST['advanced_payment'],
                     $_POST['status'],
                     $_POST['total_amount'],
+                    $_POST['customer_id'],
                     $invoice_id
                 );
                 if (! $stmt->execute()) {
@@ -185,14 +191,14 @@
                 <?php echo $_SESSION['error'];unset($_SESSION['error']); ?>
             </div>
             <?php endif; ?>
-            <?php if (isset($_SESSION['errors'])): ?>
-            <?php foreach ($_SESSION['errors'] as $error): ?>
+<?php if (isset($_SESSION['errors'])): ?>
+<?php foreach ($_SESSION['errors'] as $error): ?>
             <div class="p-3 mb-2 rounded-md bg-red-100 text-red-800">
                 <?php echo $error; ?>
             </div>
             <?php endforeach; ?>
-            <?php unset($_SESSION['errors']); ?>
-            <?php endif; ?>
+<?php unset($_SESSION['errors']); ?>
+<?php endif; ?>
         </div>
 
         <div class="flex justify-between items-center mb-4">
@@ -218,10 +224,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer Id</label>
-                    <input type="text" name="barcode_number"
-                        value="<?php echo htmlspecialchars($invoice['customer_id']); ?>"
-                        class="w-full p-2 border border-gray-300 rounded-md" required disabled>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer Id*</label>
+                    <select name="customer_id" class="w-full p-2 border border-gray-300 rounded-md" required>
+                        <?php foreach ($customer_ids as $customer): ?>
+                        <option value="<?php echo htmlspecialchars($customer['customer_id']); ?>"
+                            <?php echo $invoice['customer_id'] == $customer['customer_id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($customer['customer_id']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -241,20 +252,20 @@
                 <div class="form-group">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="w-full p-2 border border-gray-300 rounded-md">
-                        <option value="Pending" <?php echo $invoice['status'] === 'Pending' ? 'selected' : ''; ?>>
+                        <option value="Pending"                                                <?php echo $invoice['status'] === 'Pending' ? 'selected' : ''; ?>>
                             Pending</option>
-                        <option value="Completed" <?php echo $invoice['status'] === 'Completed' ? 'selected' : ''; ?>>
+                        <option value="Completed"                                                  <?php echo $invoice['status'] === 'Completed' ? 'selected' : ''; ?>>
                             Completed</option>
-                        <option value="Incomplete" <?php echo $invoice['status'] === 'Incomplete' ? 'selected' : ''; ?>>
+                        <option value="Incomplete"                                                   <?php echo $invoice['status'] === 'Incomplete' ? 'selected' : ''; ?>>
                             Incomplete</option>
-                        <option value="Cancelled" <?php echo $invoice['status'] === 'Cancelled' ? 'selected' : ''; ?>>
+                        <option value="Cancelled"                                                  <?php echo $invoice['status'] === 'Cancelled' ? 'selected' : ''; ?>>
                             Cancelled</option>
-                        <option value="Returned" <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
+                        <option value="Returned"                                                 <?php echo $invoice['status'] === 'Returned' ? 'selected' : ''; ?>>
                             Returned</option>
-                        <option value="Dispatched" <?php echo $invoice['status'] === 'Dispatched' ? 'selected' : ''; ?>>
+                        <option value="Dispatched"                                                   <?php echo $invoice['status'] === 'Dispatched' ? 'selected' : ''; ?>>
                             Dispatched
                         </option>
-                        <option value="Delay" <?php echo $invoice['status'] === 'Delay' ? 'Delay' : ''; ?>>
+                        <option value="Delay"                                              <?php echo $invoice['status'] === 'Delay' ? 'Delay' : ''; ?>>
                             Delay
                         </option>
                     </select>
