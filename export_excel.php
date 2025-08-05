@@ -47,7 +47,7 @@ fwrite($output, $header);
 $from_date = $_POST['from_date'] ?? '';
 $to_date   = $_POST['to_date'] ?? '';
 
-if (!empty($from_date) && !empty($to_date)) {
+if (! empty($from_date) && ! empty($to_date)) {
     $stmt = $conn->prepare("SELECT i.*, d.mobile AS sender_mobile
                            FROM invoices i
                            LEFT JOIN distributors d ON i.customer_id = d.customer_id
@@ -90,8 +90,14 @@ while ($row = $result->fetch_assoc()) {
         htmlspecialchars($row['village']),
         htmlspecialchars($row['pincode']),
         htmlspecialchars($row['full_name']),
-        htmlspecialchars($row['address1']),
-        htmlspecialchars($row['district']),
+        htmlspecialchars(
+            $row['address1'] .
+            ' ' . $row['village'] .
+            ' ' . $row['sub_district'] .
+            ' ' . $row['district'] .
+            ($row['pincode'] ? ' - ' . $row['pincode'] : '')
+        ),
+        htmlspecialchars($row['address2']),
         htmlspecialchars($row['district']),
         htmlspecialchars($row['district']),
         htmlspecialchars($row['mobile']),
@@ -103,9 +109,9 @@ while ($row = $result->fetch_assoc()) {
         '10',
         '10',
         '5',
-        htmlspecialchars($row['employee_name'] ?? 'N/A'), // Created By
-        htmlspecialchars($row['status'] ?? ''), // Status
-        htmlspecialchars($row['is_repeated_order'] == 'yes' ? 'Yes' : 'No') // Repeat Order
+        htmlspecialchars($row['employee_name'] ?? 'N/A'),                    // Created By
+        htmlspecialchars($row['status'] ?? ''),                              // Status
+        htmlspecialchars($row['is_repeated_order'] == 'yes' ? 'Yes' : 'No'), // Repeat Order
     ];
 
     // Write row to Excel
@@ -123,4 +129,3 @@ fwrite($output, "</table>");
 
 fclose($output);
 exit;
-?>

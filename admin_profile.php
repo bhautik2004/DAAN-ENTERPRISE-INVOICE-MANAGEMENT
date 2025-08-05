@@ -6,6 +6,9 @@
     $admin_id = $_SESSION['admin_id']; // Ensure admin is logged in
     $message  = "";
 
+    // Define a static security key (change this to your preferred number)
+    $static_security_key = "9638478838"; // Example static key
+
     if (! $admin_id) {
         header("Location: login.php"); // Redirect if not logged in
         exit;
@@ -26,6 +29,7 @@
         $old_password = isset($_POST['old_password']) ? trim($_POST['old_password']) : '';
         $new_password = isset($_POST['new_password']) ? trim($_POST['new_password']) : '';
         $confirm_password = isset($_POST['confirm_password']) ? trim($_POST['confirm_password']) : '';
+        $provided_security_key = isset($_POST['security_key']) ? trim($_POST['security_key']) : '';
         
         // Initialize update flags
         $update_name = false;
@@ -60,19 +64,26 @@
         
         // Check if password is being changed
         if (!empty($old_password) || !empty($new_password)) {
-            if (password_verify($old_password, $hashed_password)) {
-                if ($new_password === $confirm_password) {
-                    if (!empty($new_password)) {
-                        $update_password = true;
-                        $new_hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    } else {
-                        $message = "<p class='text-red-500 text-center'>New password cannot be empty!</p>";
-                    }
-                } else {
-                    $message = "<p class='text-red-500 text-center'>New passwords do not match!</p>";
-                }
-            } else {
+            // Check if security key matches the static key
+            if ($provided_security_key != $static_security_key) {
+                $message = "<p class='text-red-500 text-center'>Invalid security key!</p>";
+            }
+            // Verify old password
+            elseif (!password_verify($old_password, $hashed_password)) {
                 $message = "<p class='text-red-500 text-center'>Incorrect old password!</p>";
+            }
+            // Check if new passwords match
+            elseif ($new_password !== $confirm_password) {
+                $message = "<p class='text-red-500 text-center'>New passwords do not match!</p>";
+            }
+            // Check if new password is not empty
+            elseif (empty($new_password)) {
+                $message = "<p class='text-red-500 text-center'>New password cannot be empty!</p>";
+            }
+            // If all checks pass, allow password update
+            else {
+                $update_password = true;
+                $new_hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
             }
         }
         
@@ -168,6 +179,11 @@
                         <div class="mb-4">
                             <label class="block text-sm font-semibold">Old Password</label>
                             <input type="password" name="old_password" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold">Security Key (Required for password change)</label>
+                            <input type="number" name="security_key" class="w-full p-2 mt-1 border border-gray-300 rounded-md" placeholder="Enter security key">
                         </div>
 
                         <div class="mb-4">
